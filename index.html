@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Saltos bajo el mar de Chiloé · Fondecyt 11260408</title>
+  <meta name="description" content="Proyecto Fondecyt de Iniciación 11260408 (ANID, UFRO): turbulencia, mezcla y saltos hidráulicos internos en el Canal Desertores, Mar Interior de Chiloé, con el modelo CROCO no hidrostático.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Source+Sans+3:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+
+<header class="barra">
+  <div class="contenedor">
+    <a class="marca" href="index.html">Desertores <span>· Fondecyt 11260408</span></a>
+    <nav>
+      <a href="index.html" aria-current="page">Proyecto</a>
+      <a href="laboratorio/">Laboratorio</a>
+      <a href="difusion/">Difusión</a>
+    </nav>
+  </div>
+</header>
+
+<div class="portada">
+  <div class="contenedor">
+    <span class="etiqueta">Fondecyt de Iniciación 2026–2029 · Universidad de La Frontera</span>
+    <h1>Saltos, ondas y remolinos bajo el mar de Chiloé</h1>
+    <p class="bajada">Estudiamos cómo la marea mezcla el agua dulce y el agua de mar en los canales del Mar Interior de Chiloé, usando modelos numéricos que resuelven el movimiento vertical del océano.</p>
+    <p class="titulo-oficial">Título del proyecto: <em>Understanding Water Column Stability in a Semi-Enclosed System Using a Non-Hydrostatic Approach</em></p>
+  </div>
+
+  <!-- Esquema simplificado: flujo de dos capas sobre un umbral -->
+  <svg viewBox="0 0 1000 300" role="img" aria-labelledby="esq-titulo esq-desc">
+    <title id="esq-titulo">Esquema de un salto hidráulico interno</title>
+    <desc id="esq-desc">La marea empuja dos capas de agua sobre un umbral submarino; la capa densa se hunde a sotavento, salta bruscamente y forma ondas y remolinos que mezclan el agua.</desc>
+    <!-- capa superior (agua dulce/salobre) -->
+    <rect x="0" y="40" width="1000" height="260" fill="#9fd8df"/>
+    <!-- capa inferior (agua de mar densa) -->
+    <path fill="#1f6f8b" d="M0,120 C170,120 330,116 440,108 C490,104 520,125 545,165 C565,195 585,205 605,200 C620,196 630,160 655,150 C690,140 715,165 745,168 C775,171 795,148 830,148 C860,148 880,162 915,160 C950,158 975,152 1000,152 L1000,300 L0,300 Z"/>
+    <!-- fondo con umbral -->
+    <path fill="#2b2620" d="M0,300 L0,282 C170,277 320,258 400,228 C440,212 465,203 490,206 C530,213 580,246 660,270 C750,290 880,292 1000,288 L1000,300 Z"/>
+    <!-- superficie -->
+    <path d="M0,40 Q25,35 50,40 T100,40 T150,40 T200,40 T250,40 T300,40 T350,40 T400,40 T450,40 T500,40 T550,40 T600,40 T650,40 T700,40 T750,40 T800,40 T850,40 T900,40 T950,40 T1000,40" fill="none" stroke="#ffffff" stroke-width="3"/>
+    <!-- remolinos en el salto -->
+    <g fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity=".85">
+      <path d="M612,186 a10,10 0 1,1 12,10 a5,5 0 1,1 -4,-7"/>
+      <path d="M640,168 a12,12 0 1,1 14,12 a6,6 0 1,1 -5,-8"/>
+      <path d="M668,186 a9,9 0 1,1 11,9 a4,4 0 1,1 -3,-6"/>
+    </g>
+    <!-- flecha de marea -->
+    <g fill="#0b2a3c">
+      <rect x="150" y="66" width="120" height="6" rx="3"/>
+      <path d="M270,58 L292,69 L270,80 Z"/>
+    </g>
+    <g class="rotulos" font-family="Source Sans 3, Segoe UI, sans-serif" font-size="24" font-weight="600">
+      <text x="305" y="78" fill="#0b2a3c">marea</text>
+      <text x="24" y="100" fill="#0b2a3c">agua dulce (liviana)</text>
+      <text x="24" y="200" fill="#ffffff">agua de mar (densa)</text>
+      <text x="400" y="262" fill="#ffffff">umbral</text>
+      <text x="560" y="104" fill="#0b2a3c">salto interno</text>
+      <text x="790" y="126" fill="#0b2a3c">ondas</text>
+      <text x="640" y="232" fill="#ffffff">mezcla</text>
+    </g>
+    <line class="rotulos" x1="620" y1="112" x2="638" y2="152" stroke="#0b2a3c" stroke-width="2.5"/>
+  </svg>
+  <p class="leyenda-movil contenedor">La marea empuja el agua de mar (densa, azul oscuro) sobre un umbral. Detrás de él, el agua se hunde, salta y forma ondas y remolinos que mezclan las capas.</p>
+</div>
+
+<main>
+  <section id="resumen">
+    <div class="contenedor"><div class="intro">
+      <h2>El proyecto en breve</h2>
+      <p>El Mar Interior de Chiloé es un sistema semicerrado donde el agua dulce de ríos, lluvia y glaciares se encuentra con el agua salada del Pacífico. Las dos aguas no se mezclan fácilmente: la más liviana queda arriba y la más densa abajo, como en un vaso con aceite y agua.</p>
+      <p>En canales estrechos y con umbrales submarinos, como el <strong>Canal Desertores</strong>, la marea empuja esas capas con fuerza. El agua densa se hunde detrás del umbral y luego "salta" de golpe, formando ondas internas y remolinos que mezclan la columna de agua. Lo que ocurre en esos pocos kilómetros controla cuánta agua, oxígeno y nutrientes se intercambian entre las cuencas del norte y del sur.</p>
+      <p>Los modelos que se usan hoy en la zona suponen que el movimiento vertical es pequeño (<em>aproximación hidrostática</em>). En un salto interno esa suposición puede fallar. Por eso usamos el modelo <strong>CROCO</strong> en su versión <strong>no hidrostática</strong>, con simulaciones gemelas que comparan ambos enfoques a resoluciones de hasta 25&nbsp;m, para entender cómo cambian la turbulencia y la mezcla entre mareas de sicigia y de cuadratura.</p>
+    </div>
+  </div>
+  </section>
+
+  <section id="sociedad">
+    <div class="contenedor">
+      <h2>¿Para qué sirve a la sociedad?</h2>
+      <p class="intro">El Mar Interior de Chiloé sostiene buena parte de la acuicultura de Chile y a muchas comunidades costeras. Para gestionarlo bien, hay que entender cómo se mueve y se mezcla su agua.</p>
+      <div class="tarjetas">
+        <article class="tarjeta">
+          <div class="icono" aria-hidden="true">🐟</div>
+          <h3>Acuicultura y sanidad</h3>
+          <p>La circulación define hacia dónde viajan virus, parásitos y desechos entre centros de cultivo. Conocerla mejor ayuda a diseñar áreas de manejo sanitario.</p>
+        </article>
+        <article class="tarjeta">
+          <div class="icono" aria-hidden="true">🦠</div>
+          <h3>Floraciones algales nocivas</h3>
+          <p>Las floraciones de 2016 y la del fiordo Comau causaron grandes mortalidades de peces y mariscos. La estratificación y la mezcla influyen en cuándo y dónde aparecen.</p>
+        </article>
+        <article class="tarjeta">
+          <div class="icono" aria-hidden="true">🫧</div>
+          <h3>Oxígeno en el fondo</h3>
+          <p>La mezcla en los umbrales renueva el agua profunda. Si falla, pueden aparecer zonas con poco oxígeno que afectan a la vida marina.</p>
+        </article>
+        <article class="tarjeta">
+          <div class="icono" aria-hidden="true">⚡</div>
+          <h3>Energía de las mareas</h3>
+          <p>Los canales con corrientes intensas son candidatos para energía mareomotriz. Saber cómo se comporta la turbulencia es clave para evaluarlos.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="impacto">
+    <div class="contenedor">
+      <h2>Impacto esperado</h2>
+      <ul class="impacto">
+        <li><strong>Mejores modelos.</strong> Un criterio práctico para saber cuándo un modelo del océano necesita ser no hidrostático, aplicable a otros fiordos y estuarios del mundo.</li>
+        <li><strong>Herramientas para la gestión.</strong> Simulaciones más realistas de mezcla y transporte que pueden alimentar sistemas de pronóstico y estudios de dispersión en la Patagonia.</li>
+        <li><strong>Formación.</strong> Tesis de pregrado y postgrado en modelación oceánica en la Universidad de La Frontera.</li>
+        <li><strong>Ciencia abierta y cercana.</strong> Un laboratorio interactivo, videos cortos y material para colegios y comunidades, para que cualquiera pueda entender la física del mar donde vive.</li>
+      </ul>
+      <p class="nota-pie">Primer artículo asociado: Artal et al. (2026), <a href="https://doi.org/10.1016/j.ecss.2026.110142">Spring–neap variability of water column mixing and internal hydraulic control in a Chilean Patagonian channel</a>, <em>Estuarine, Coastal and Shelf Science</em>.</p>
+    </div>
+  </section>
+
+  <section id="explora">
+    <div class="contenedor">
+      <h2>Explora</h2>
+      <div class="puertas">
+        <a class="puerta lab" href="laboratorio/">
+          <span class="flecha" aria-hidden="true">→</span>
+          <h3>Laboratorio de Remolinos y Ondas</h3>
+          <p>Juega con el agua: remolinos, ondas internas y el número de Richardson, en módulos interactivos.</p>
+        </a>
+        <a class="puerta dif" href="difusion/">
+          <span class="flecha" aria-hidden="true">→</span>
+          <h3>Difusión</h3>
+          <p>Videos, mascotas del proyecto, material para colegios y actividades como Somos UFRO.</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section id="equipo">
+    <div class="contenedor"><div class="intro">
+      <h2>Equipo</h2>
+      <p><strong>Osvaldo Artal</strong>, investigador responsable. Departamento de Ingeniería en Obras Civiles, Universidad de La Frontera, Temuco.</p>
+      <p>Colaboran: Héctor H. Sepúlveda (Universidad de Concepción) y Gonzalo S. Saldías (Universidad del Bío-Bío).</p>
+      <p>Contacto: <a href="mailto:osvaldo.artal@ufrontera.cl">osvaldo.artal@ufrontera.cl</a></p>
+    </div>
+  </div>
+  </section>
+</main>
+
+<footer>
+  <div class="contenedor">
+    <div class="logos">
+      <!-- Reemplazar por los logos oficiales (carpetas ANID y RECURSOS GRÁFICOS) -->
+      <img src="img/logo-anid.png" alt="ANID" onerror="this.style.display='none'">
+      <img src="img/logo-ufro.png" alt="Universidad de La Frontera" onerror="this.style.display='none'">
+    </div>
+    <p>Este proyecto es financiado por la Agencia Nacional de Investigación y Desarrollo (ANID) a través del proyecto Fondecyt de Iniciación N° 11260408.</p>
+  </div>
+</footer>
+
+</body>
+</html>

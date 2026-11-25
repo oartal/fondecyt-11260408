@@ -1,0 +1,1530 @@
+<title>Remolinos y Ondas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,500..800&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: one-screen stand app — header tabs, simulation stage (fills), control/gauge/explanation band below.
+   Single deliberate dark look (deep fjord water) so the simulations glow on a stand screen. */
+:root {
+  --abyss: #0a1822;
+  --deep: #0f2331;
+  --panel: #12293a;
+  --line: #234257;
+  --fg: #e9f2f4;
+  --muted: #93b2bf;
+  --buoy: #ff8a3d;
+  --fresh: #8de3c6;
+  --calm: #63d0b3;
+  --warn: #ffd166;
+  --hot: #ff6b5a;
+  --rock: #c8b28a;
+  --f-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  background: var(--abyss); color: var(--fg);
+  font-family: var(--f-body); font-size: 17px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  box-sizing: border-box;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+.app { height: 100%; display: grid; grid-template-rows: auto 1fr auto; gap: 10px; padding-block: 10px; }
+
+/* header */
+header { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+.brand { display: flex; flex-direction: column; min-width: 0; }
+.brand h1 {
+  font-family: var(--f-display); font-stretch: 112%; font-weight: 800; font-size: 26px;
+  letter-spacing: -0.01em; margin: 0; line-height: 1.05; text-wrap: balance;
+}
+.brand h1 b { color: var(--buoy); font-weight: 800; }
+.brand span { color: var(--muted); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; }
+.tabs { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+.tab {
+  font: 600 16px var(--f-body); color: var(--muted); background: transparent;
+  border: 1px solid var(--line); border-radius: 999px; padding: 8px 16px 8px 8px;
+  display: inline-flex; align-items: center; gap: 10px; cursor: pointer;
+}
+.tab kbd { font-family: var(--f-data); font-size: 13px; background: var(--deep); border: 1px solid var(--line); border-radius: 6px; padding: 1px 7px; color: var(--fg); }
+.tab[aria-selected="true"] { color: var(--abyss); background: var(--fg); border-color: var(--fg); }
+.tab[aria-selected="true"] kbd { background: var(--abyss); color: var(--fg); border-color: var(--abyss); }
+.iconbtn { font: 600 14px var(--f-body); color: var(--fg); background: var(--deep); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+button:focus-visible, input:focus-visible { outline: 3px solid var(--buoy); outline-offset: 2px; }
+
+/* module */
+main { min-height: 0; display: grid; }
+.module { min-height: 0; display: grid; grid-template-rows: minmax(180px, 1fr) auto; gap: 12px; }
+.stage { position: relative; min-height: 0; border-radius: 14px; overflow: hidden; background: var(--deep); border: 1px solid var(--line); }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: none; }
+.tag {
+  position: absolute; pointer-events: none; font: 600 14px var(--f-body); color: var(--fg);
+  background: rgba(10, 24, 34, 0.72); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px;
+}
+.tag.tl { top: 12px; left: 12px; }
+.tag.tr { top: 12px; right: 12px; text-align: right; }
+.tag.bl { bottom: 12px; left: 12px; }
+.tag .arrow { font-family: var(--f-data); color: var(--buoy); }
+.demo-chip {
+  position: absolute; left: 50%; top: 14px; transform: translateX(-50%);
+  font: 700 18px var(--f-display); font-stretch: 105%; color: var(--abyss); background: var(--buoy);
+  border-radius: 999px; padding: 8px 20px; pointer-events: none;
+}
+.toast { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); background: var(--fg); color: var(--abyss); border-radius: 8px; padding: 8px 14px; font-weight: 700; pointer-events: none; }
+
+/* bottom band */
+.panel { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.25fr) minmax(0, 1fr); gap: 14px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.label { font: 700 12px var(--f-body); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+.label output { font-family: var(--f-data); letter-spacing: 0; text-transform: none; color: var(--fg); font-size: 15px; font-weight: 600; }
+.controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px 16px; align-content: start; }
+.controls .wide { grid-column: 1 / -1; }
+.ctl { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.seg { display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); gap: 6px; }
+.seg button {
+  font: 700 15px var(--f-body); color: var(--fg); background: var(--deep); border: 1px solid var(--line);
+  border-radius: 9px; padding: 6px 6px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 0;
+}
+.seg button small { font: 400 11px var(--f-body); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.seg button[aria-pressed="true"] { background: var(--buoy); border-color: var(--buoy); color: var(--abyss); }
+.seg button[aria-pressed="true"] small { color: rgba(10, 24, 34, 0.75); }
+input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; background: transparent; cursor: pointer; margin: 0; }
+input[type="range"]::-webkit-slider-runnable-track { height: 8px; border-radius: 99px; background: linear-gradient(90deg, var(--line), var(--muted)); }
+input[type="range"]::-moz-range-track { height: 8px; border-radius: 99px; background: linear-gradient(90deg, var(--line), var(--muted)); }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; border-radius: 50%; background: var(--buoy); border: 3px solid var(--abyss); margin-top: -8px; }
+input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: var(--buoy); border: 3px solid var(--abyss); }
+.ends { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: -4px; }
+
+/* gauge */
+.bignum { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.bignum .sym { font: 700 30px var(--f-display); font-stretch: 90%; color: var(--muted); }
+.bignum .val { font: 700 56px/1 var(--f-display); font-stretch: 100%; font-variant-numeric: tabular-nums lining-nums; letter-spacing: -0.01em; }
+.regime { display: inline-flex; align-items: center; gap: 8px; font: 800 20px var(--f-display); font-stretch: 108%; }
+.regime i { width: 14px; height: 14px; border-radius: 50%; background: var(--calm); display: inline-block; }
+.gaugebox { width: 100%; overflow: hidden; }
+.gaugebox svg { width: 100%; height: auto; display: block; }
+.sub { color: var(--muted); font-size: 15px; margin: 0; }
+
+/* traffic light (three states) */
+.lights { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.light {
+  --c: var(--calm); border: 1px solid var(--line); border-radius: 12px; background: var(--deep); color: var(--muted);
+  font: 800 18px/1.1 var(--f-display); font-stretch: 105%; text-align: center; padding: 12px 6px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0;
+}
+.light i { width: 30px; height: 30px; border-radius: 50%; background: var(--line); }
+.light.on { color: var(--fg); border-color: var(--c); }
+.light.on i { background: var(--c); box-shadow: 0 0 20px var(--c); }
+.lights + .sub { font-size: 17px; color: var(--fg); }
+.gauge .sub { min-height: 2.9em; }
+
+/* mixing meter */
+.mixrow { display: grid; grid-template-columns: auto minmax(0, 1fr) 4.5ch; align-items: center; gap: 10px; }
+.mixrow output { font: 600 15px var(--f-data); text-align: right; }
+.mixbar { height: 14px; border-radius: 99px; background: var(--deep); border: 1px solid var(--line); overflow: hidden; }
+.mixbar i { display: block; height: 100%; width: 0%; border-radius: 99px; background: linear-gradient(90deg, var(--fresh), var(--buoy)); }
+.pill { font: 700 15px var(--f-body); color: var(--fg); background: var(--deep); border: 1px solid var(--line); border-radius: 9px; padding: 8px 12px; cursor: pointer; }
+
+/* explanation */
+.explain h2 { font: 800 22px/1.15 var(--f-display); font-stretch: 108%; margin: 0; text-wrap: balance; color: var(--fg); }
+.explain p { margin: 0; max-width: 62ch; }
+.explain { gap: 8px; }
+.formula { font-family: var(--f-data); font-size: 15px; background: var(--deep); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; align-self: flex-start; }
+.formula em { font-style: normal; color: var(--buoy); }
+.fine { font-size: 13px; color: var(--muted); }
+
+footer { display: flex; gap: 14px 20px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--muted); }
+footer kbd { font-family: var(--f-data); font-size: 12px; color: var(--fg); background: var(--deep); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; }
+footer .credit { margin-left: auto; }
+
+@media (max-width: 1100px) {
+  .panel { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .explain { grid-column: 1 / -1; }
+}
+@media (max-width: 700px) {
+  html, body { height: auto; }
+  .app { height: auto; }
+  .module { grid-template-rows: auto auto; }
+  .stage { aspect-ratio: 3 / 1; max-width: 100%; }
+  .tag.tr, .tag.bl { display: none; }
+  .tag { font-size: 12px; padding: 4px 8px; }
+  .panel { grid-template-columns: minmax(0, 1fr); }
+  .tabs { margin-left: 0; }
+  .bignum .val { font-size: 40px; }
+  footer .credit { margin-left: 0; }
+}
+@media (min-width: 1700px) { body { font-size: 18px; } .brand h1 { font-size: 30px; } .bignum .val { font-size: 60px; } }
+</style>
+
+<div class="app">
+  <header>
+    <div class="brand">
+      <h1>Laboratorio de <b>Remolinos</b> y <b>Ondas</b></h1>
+      <span>Física del océano · Universidad de La Frontera</span>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Módulos">
+      <button class="tab" id="tab-re" role="tab" aria-selected="true" aria-controls="mod-re"><kbd>1</kbd>Remolinos</button>
+      <button class="tab" id="tab-iw" role="tab" aria-selected="false" aria-controls="mod-iw"><kbd>2</kbd>Olas escondidas</button>
+      <button class="tab" id="tab-ri" role="tab" aria-selected="false" aria-controls="mod-ri"><kbd>3</kbd>¿Se mezcla?</button>
+    </nav>
+    <button class="iconbtn" id="btn-fs" title="Pantalla completa (F)">Pantalla completa</button>
+  </header>
+
+  <main>
+    <!-- ============ MÓDULO 1: REYNOLDS ============ -->
+    <section class="module" id="mod-re" role="tabpanel" aria-labelledby="tab-re">
+      <div class="stage" id="stage-re">
+        <canvas id="cv-re" aria-label="Simulación del flujo alrededor de un obstáculo"></canvas>
+        <div class="tag tl"><span class="arrow">→ → →</span> el fluido entra por la izquierda</div>
+        <div class="tag tr">Simulación en 2D</div>
+        <div class="tag bl">Clic izquierdo: dibuja una roca · Clic derecho: bórrala</div>
+        <div class="demo-chip" id="demo-re" hidden>Modo demostración · mueve el mouse para jugar</div>
+        <div class="toast" id="toast-re" hidden></div>
+      </div>
+      <div class="panel">
+        <div class="card controls">
+          <div class="ctl wide">
+            <div class="label">Fluido <span class="fine">↑ ↓</span></div>
+            <div class="seg" id="re-fluids" style="--n:3"></div>
+          </div>
+          <div class="ctl wide">
+            <label class="label" for="re-speed">Velocidad <span class="fine">← →</span></label>
+            <input type="range" id="re-speed" min="0" max="100" step="1" value="60">
+            <div class="ends"><span>lento</span><span>rápido</span></div>
+          </div>
+          <div class="ctl">
+            <label class="label" for="re-size">Tamaño</label>
+            <input type="range" id="re-size" min="5" max="14" step="1" value="9">
+            <div class="ends"><span>chico</span><span>grande</span></div>
+          </div>
+          <div class="ctl">
+            <div class="label">Vista <span class="fine">V</span></div>
+            <div class="seg" id="re-views" style="--n:2"></div>
+          </div>
+          <div class="ctl wide">
+            <div class="label">Objeto</div>
+            <div class="seg" id="re-shapes" style="--n:4"></div>
+          </div>
+        </div>
+        <div class="card gauge">
+          <div class="label">¿Cómo pasa el fluido?</div>
+          <div class="lights" id="re-lights" role="status" aria-live="polite">
+            <div class="light" style="--c: var(--calm)"><i></i>Ordenado</div>
+            <div class="light" style="--c: var(--warn)"><i></i>Remolinos</div>
+            <div class="light" style="--c: var(--hot)"><i></i>Revuelto</div>
+          </div>
+          <p class="sub" id="re-regime-sub">—</p>
+        </div>
+        <div class="card explain">
+          <h2>¿Qué pasa detrás de la roca?</h2>
+          <p>Si el fluido va lento, o es espeso como la miel, pasa ordenado.</p>
+          <p>Si va rápido, deja remolinos que se sueltan a un lado y al otro. En el mar pasa lo mismo detrás de las islas y las rocas.</p>
+          <p class="fine">Los científicos miden esto con el número de Reynolds.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ MÓDULO 2: ONDAS INTERNAS ============ -->
+    <section class="module" id="mod-iw" role="tabpanel" aria-labelledby="tab-iw" hidden>
+      <div class="stage" id="stage-iw">
+        <canvas id="cv-iw" aria-label="Simulación de ondas internas sobre un umbral submarino"></canvas>
+        <div class="tag tl" id="iw-tide">Marea</div>
+        <div class="tag tr" id="iw-modetag">Cálculo completo</div>
+        <div class="demo-chip" id="demo-iw" hidden>Modo demostración · mueve el mouse para jugar</div>
+        <div class="toast" id="toast-iw" hidden></div>
+      </div>
+      <div class="panel">
+        <div class="card controls">
+          <div class="ctl wide">
+            <label class="label" for="iw-tidein">Fuerza de la marea <span class="fine">← →</span></label>
+            <input type="range" id="iw-tidein" min="0" max="100" step="1" value="45">
+            <div class="ends"><span>marea muerta</span><span>marea viva</span></div>
+          </div>
+          <div class="ctl wide">
+            <label class="label" for="iw-fresh">Agua dulce de ríos y lluvia <span class="fine">↑ ↓</span></label>
+            <input type="range" id="iw-fresh" min="0" max="100" step="1" value="50">
+            <div class="ends"><span>verano seco</span><span>invierno lluvioso</span></div>
+          </div>
+          <div class="ctl wide">
+            <label class="label" for="iw-sill">Altura del umbral <output id="iw-sill-out">—</output></label>
+            <input type="range" id="iw-sill" min="0" max="100" step="1" value="55">
+          </div>
+          <div class="ctl wide">
+            <div class="label">Forma de calcular <span class="fine">H</span></div>
+            <div class="seg" id="iw-modes" style="--n:2"></div>
+          </div>
+        </div>
+        <div class="card gauge">
+          <div class="label">Número de Froude · corriente contra olas</div>
+          <div class="bignum"><span class="sym">Fr =</span><span class="val" id="fr-val">—</span></div>
+          <div class="regime" id="fr-regime"><i></i><span>—</span></div>
+          <p class="sub" id="fr-regime-sub">—</p>
+          <div class="gaugebox" id="fr-gauge"></div>
+        </div>
+        <div class="card explain">
+          <h2>¿Puede haber olas debajo del mar?</h2>
+          <p>El agua dulce de ríos y lluvia es más liviana y flota sobre el agua salada. La frontera entre las dos puede ondularse como una ola, aunque arriba el mar se vea tranquilo.</p>
+          <p>Esas olas escondidas nacen cuando la marea pasa sobre un cerro submarino, que se llama <b>umbral</b>.</p>
+          <p class="fine" id="iw-modeexplain"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ MÓDULO 3: RICHARDSON ============ -->
+    <section class="module" id="mod-ri" role="tabpanel" aria-labelledby="tab-ri" hidden>
+      <div class="stage" id="stage-ri">
+        <canvas id="cv-ri" aria-label="Simulación de dos capas de agua que se deslizan una sobre otra"></canvas>
+        <div class="tag tl">Dos capas que se mueven en sentido contrario</div>
+        <div class="tag tr">Simulación en 2D · prototipo</div>
+        <div class="demo-chip" id="demo-ri" hidden>Modo demostración · mueve el mouse para jugar</div>
+        <div class="toast" id="toast-ri" hidden></div>
+      </div>
+      <div class="panel">
+        <div class="card controls">
+          <div class="ctl wide">
+            <label class="label" for="ri-shear">Diferencia de velocidad <span class="fine">← →</span></label>
+            <input type="range" id="ri-shear" min="0" max="100" step="1" value="50">
+            <div class="ends"><span>poca</span><span>mucha</span></div>
+          </div>
+          <div class="ctl wide">
+            <label class="label" for="ri-dens">Diferencia de peso entre las aguas <span class="fine">↑ ↓</span></label>
+            <input type="range" id="ri-dens" min="0" max="100" step="1" value="12">
+            <div class="ends"><span>poca · verano seco</span><span>mucha · invierno lluvioso</span></div>
+          </div>
+          <div class="ctl wide">
+            <button class="pill" id="ri-reset" type="button">Empezar de nuevo <span class="fine">R</span></button>
+          </div>
+        </div>
+        <div class="card gauge">
+          <div class="label">Número de Richardson · capas contra corriente</div>
+          <div class="bignum"><span class="sym">Ri =</span><span class="val" id="ri-val">—</span></div>
+          <div class="regime" id="ri-regime"><i></i><span>—</span></div>
+          <p class="sub" id="ri-regime-sub">—</p>
+          <div class="gaugebox" id="ri-gauge"></div>
+          <div class="mixrow"><span class="label">Mezcla</span><div class="mixbar"><i id="ri-mix"></i></div><output id="ri-mix-out">0 %</output></div>
+        </div>
+        <div class="card explain">
+          <h2>¿Se mezcla o no se mezcla?</h2>
+          <p>Arriba va el agua dulce y abajo el agua salada, que es más pesada. Cada una se mueve para un lado distinto.</p>
+          <p>Si la diferencia de velocidad es grande, la frontera se enrolla en remolinos y las aguas se mezclan. Si la diferencia de peso es grande, las capas aguantan separadas.</p>
+          <p class="fine">Los científicos miden esta pelea con el número de Richardson. Cuando es chico, gana la corriente.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> módulo</span>
+    <span><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> mover los controles</span>
+    <span><kbd>Espacio</kbd> pausa</span>
+    <span><kbd>R</kbd> reiniciar</span>
+    <span><kbd>F</kbd> pantalla completa</span>
+    <span class="credit">Proyecto Fondecyt de Iniciación · Modelación del océano · UFRO</span>
+  </footer>
+</div>
+
+<script>
+// ===================== Lattice Boltzmann D2Q9 (BGK + Smagorinsky) =====================
+const LB_CX = [0, 1, 0, -1, 0, 1, -1, -1, 1];
+const LB_CY = [0, 0, 1, 0, -1, 1, 1, -1, -1];
+const LB_W = [4 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 9, 1 / 36, 1 / 36, 1 / 36, 1 / 36];
+const LB_OPP = [0, 3, 4, 1, 2, 7, 8, 5, 6];
+
+class LBM {
+  constructor(nx, ny) {
+    this.nx = nx; this.ny = ny; this.N = nx * ny;
+    this.f = new Float32Array(9 * this.N);
+    this.g = new Float32Array(9 * this.N);
+    this.solid = new Uint8Array(this.N);
+    this.ux = new Float32Array(this.N);
+    this.uy = new Float32Array(this.N);
+    this.Uset = 0.1; this.U = 0.02; this.nu = 0.02; this.Cs = 0.12;
+    this.sponge = 36; this.kick = 0.15;
+    this.reset();
+  }
+  reset() {
+    const N = this.N, f = this.f, U = this.U;
+    for (let k = 0; k < 9; k++) {
+      const cu = LB_CX[k] * U;
+      const v = LB_W[k] * (1 + 3 * cu + 4.5 * cu * cu - 1.5 * U * U);
+      f.fill(v, k * N, (k + 1) * N);
+    }
+    // tiny random seed so symmetric shapes can still shed vortices
+    // plus a gentle sideways sway, so the wake does not take ages to start wobbling
+    const ph = Math.random() * 6.283, nx = this.nx;
+    for (let i = 0; i < N; i++) {
+      const e = (Math.random() - 0.5) * 2e-4 + this.kick * U * Math.sin(ph + (i % nx) * 0.07);
+      f[2 * N + i] += e; f[4 * N + i] -= e;
+    }
+    this.ux.fill(U); this.uy.fill(0);
+    for (let i = 0; i < N; i++) if (this.solid[i]) { this.ux[i] = 0; }
+    this.steps = 0;
+  }
+  step() {
+    const nx = this.nx, ny = this.ny, N = this.N, f = this.f, g = this.g, s = this.solid;
+    const uxA = this.ux, uyA = this.uy;
+    this.U += (this.Uset - this.U) * 0.004;
+    const U = this.U;
+    const tau0 = 3 * this.nu + 0.5;
+    const smag = 18 * Math.SQRT2 * this.Cs * this.Cs;
+    const spw = this.sponge, sp0 = nx - spw;
+    const N2 = 2 * N, N3 = 3 * N, N4 = 4 * N, N5 = 5 * N, N6 = 6 * N, N7 = 7 * N, N8 = 8 * N;
+    const usqIn = 1.5 * U * U;
+    const q0 = (4 / 9) * (1 - usqIn), q1 = (1 / 9) * (1 + 3 * U + 4.5 * U * U - usqIn), q2 = (1 / 9) * (1 - usqIn),
+      q3 = (1 / 9) * (1 - 3 * U + 4.5 * U * U - usqIn), q5 = (1 / 36) * (1 + 3 * U + 4.5 * U * U - usqIn),
+      q6 = (1 / 36) * (1 - 3 * U + 4.5 * U * U - usqIn);
+    for (let y = 0; y < ny; y++) {
+      const ru = (y + 1 < ny ? y + 1 : 0) * nx;
+      const rd = (y > 0 ? y - 1 : ny - 1) * nx;
+      const r = y * nx;
+      // inlet column: equilibrium at U
+      const i0 = r;
+      if (!s[i0]) {
+        g[i0] = q0; g[N + i0] = q1; g[N2 + i0] = q2; g[N3 + i0] = q3; g[N4 + i0] = q2;
+        g[N5 + i0] = q5; g[N6 + i0] = q6; g[N7 + i0] = q6; g[N8 + i0] = q5;
+        uxA[i0] = U; uyA[i0] = 0;
+      }
+      for (let x = 1; x < nx - 1; x++) {
+        const idx = r + x;
+        if (s[idx]) { uxA[idx] = 0; uyA[idx] = 0; continue; }
+        let j;
+        const f0 = f[idx];
+        j = idx - 1;       const f1 = s[j] ? f[N3 + idx] : f[N + j];
+        j = rd + x;        const f2 = s[j] ? f[N4 + idx] : f[N2 + j];
+        j = idx + 1;       const f3 = s[j] ? f[N + idx] : f[N3 + j];
+        j = ru + x;        const f4 = s[j] ? f[N2 + idx] : f[N4 + j];
+        j = rd + x - 1;    const f5 = s[j] ? f[N7 + idx] : f[N5 + j];
+        j = rd + x + 1;    const f6 = s[j] ? f[N8 + idx] : f[N6 + j];
+        j = ru + x + 1;    const f7 = s[j] ? f[N5 + idx] : f[N7 + j];
+        j = ru + x - 1;    const f8 = s[j] ? f[N6 + idx] : f[N8 + j];
+        const rho = f0 + f1 + f2 + f3 + f4 + f5 + f6 + f7 + f8;
+        const ir = 1 / rho;
+        const ux = (f1 - f3 + f5 - f6 - f7 + f8) * ir;
+        const uy = (f2 - f4 + f5 + f6 - f7 - f8) * ir;
+        const usq = 1.5 * (ux * ux + uy * uy);
+        const r9 = rho / 9, r36 = rho / 36;
+        const fe0 = 4 * r9 * (1 - usq);
+        const fe1 = r9 * (1 + 3 * ux + 4.5 * ux * ux - usq);
+        const fe2 = r9 * (1 + 3 * uy + 4.5 * uy * uy - usq);
+        const fe3 = r9 * (1 - 3 * ux + 4.5 * ux * ux - usq);
+        const fe4 = r9 * (1 - 3 * uy + 4.5 * uy * uy - usq);
+        const a5 = ux + uy, a6 = uy - ux;
+        const fe5 = r36 * (1 + 3 * a5 + 4.5 * a5 * a5 - usq);
+        const fe6 = r36 * (1 + 3 * a6 + 4.5 * a6 * a6 - usq);
+        const fe7 = r36 * (1 - 3 * a5 + 4.5 * a5 * a5 - usq);
+        const fe8 = r36 * (1 - 3 * a6 + 4.5 * a6 * a6 - usq);
+        const n1 = f1 - fe1, n2 = f2 - fe2, n3 = f3 - fe3, n4 = f4 - fe4;
+        const n5 = f5 - fe5, n6 = f6 - fe6, n7 = f7 - fe7, n8 = f8 - fe8;
+        const pxx = n1 + n3 + n5 + n6 + n7 + n8;
+        const pyy = n2 + n4 + n5 + n6 + n7 + n8;
+        const pxy = n5 - n6 + n7 - n8;
+        const Q = Math.sqrt(pxx * pxx + pyy * pyy + 2 * pxy * pxy);
+        let tau = 0.5 * (tau0 + Math.sqrt(tau0 * tau0 + smag * Q * ir));
+        if (x > sp0) { const q = (x - sp0) / spw; tau += 1.5 * q * q; }
+        const om = 1 / tau;
+        g[idx] = f0 + om * (fe0 - f0);
+        g[N + idx] = f1 - om * n1;
+        g[N2 + idx] = f2 - om * n2;
+        g[N3 + idx] = f3 - om * n3;
+        g[N4 + idx] = f4 - om * n4;
+        g[N5 + idx] = f5 - om * n5;
+        g[N6 + idx] = f6 - om * n6;
+        g[N7 + idx] = f7 - om * n7;
+        g[N8 + idx] = f8 - om * n8;
+        uxA[idx] = ux; uyA[idx] = uy;
+      }
+      // outlet: zero gradient
+      const io = r + nx - 1, ip = io - 1;
+      for (let k = 0; k < 9; k++) g[k * N + io] = g[k * N + ip];
+      uxA[io] = uxA[ip]; uyA[io] = uyA[ip];
+    }
+    this.f = g; this.g = f;
+    this.steps++;
+  }
+  healthy() {
+    const ux = this.ux, n = this.N;
+    for (let i = 0; i < n; i += 97) { const v = ux[i]; if (!(v > -1 && v < 1)) return false; }
+    return true;
+  }
+  // characteristic length: vertical extent (frontal height) of solid
+  frontalHeight() {
+    const nx = this.nx, ny = this.ny, s = this.solid;
+    let cnt = 0;
+    for (let y = 0; y < ny; y++) { for (let x = 0; x < nx; x++) if (s[y * nx + x]) { cnt++; break; } }
+    return cnt;
+  }
+}
+
+// ===================== Two-dimensional Boussinesq flow over a sill =====================
+// vorticity–streamfunction, x periodic with sponges, rigid lid, barotropic tide through psi_top
+class InternalWaves {
+  constructor(nx = 300, nz = 75, Lx = 4, H = 1) {
+    this.nx = nx; this.nz = nz; this.Lx = Lx; this.H = H;
+    this.dx = Lx / nx; this.dz = H / nz;
+    const n = nx * (nz + 1); this.n = n;
+    this.solid = new Uint8Array(n);
+    this.hx = new Float64Array(nx);
+    this.kb = new Int32Array(nx);
+    this.psibt = new Float64Array(n);
+    this.psip = new Float64Array(n);
+    this.psi = new Float64Array(n);
+    this.om = new Float64Array(n);
+    this.b = new Float64Array(n);
+    this.b0 = new Float64Array(n);
+    this.u = new Float64Array(n);
+    this.w = new Float64Array(n);
+    this.t1 = new Float64Array(n);
+    this.t2 = new Float64Array(n);
+    this.db = 1.0; this.U0 = 0.2; this.hs = 0.5; this.T = 24;
+    this.zi = 0.66; this.delta = 0.03; this.ws = 0.28;
+    this.nu = 3e-4; this.kappa = 3e-4;
+    this.nonhyd = true; this.sor = 1.9; this.iters = 18;
+    this.t = 0; this.G = 0; this.Q = 0; this.Ls = 0.45; // sponge width at the x ends (0 = fully periodic)
+    this.build(true);
+  }
+  idx(i, k) { return k * this.nx + i; }
+  setB0() {
+    const { nx, nz, dz } = this;
+    for (let k = 0; k <= nz; k++) {
+      const v = 0.5 * this.db * Math.tanh((k * dz - this.zi) / this.delta);
+      for (let i = 0; i < nx; i++) this.b0[k * nx + i] = v;
+    }
+  }
+  build(resetState) {
+    const { nx, nz, dx, dz } = this;
+    const x0 = this.Lx / 2;
+    for (let i = 0; i < nx; i++) {
+      const s = (i * dx - x0) / this.ws;
+      this.hx[i] = this.hs * Math.exp(-s * s);
+      let kb = 1;
+      while (kb * dz <= this.hx[i]) kb++;
+      this.kb[i] = kb;
+      for (let k = 0; k <= nz; k++) this.solid[k * nx + i] = k < kb ? 1 : 0;
+    }
+    this.setB0();
+    if (resetState) {
+      this.b.set(this.b0); this.om.fill(0); this.psip.fill(0); this.t = 0;
+    } else {
+      for (let j = 0; j < this.n; j++) if (this.solid[j]) { this.b[j] = this.b0[j]; this.om[j] = 0; this.psip[j] = 0; }
+    }
+    this.buildBarotropic();
+    if (!resetState) this.solvePsi(this.nonhyd ? 400 : 0);
+  }
+  buildBarotropic() {
+    const { nx, nz, kb, psibt } = this;
+    // hydrostatic (column-linear) profile, also the first guess for the potential flow
+    for (let i = 0; i < nx; i++) {
+      const k0 = kb[i] - 1;
+      for (let k = 0; k <= nz; k++) psibt[k * nx + i] = k <= k0 ? 0 : (k - k0) / (nz - k0);
+    }
+    if (!this.nonhyd) return;
+    const solid = this.solid, w = 1.92;
+    for (let it = 0; it < 2500; it++) {
+      for (let k = 1; k < nz; k++) {
+        const r = k * nx;
+        for (let i = 0; i < nx; i++) {
+          const j = r + i; if (solid[j]) continue;
+          const e = i + 1 < nx ? j + 1 : r, wv = i > 0 ? j - 1 : r + nx - 1;
+          const nv = (psibt[e] + psibt[wv] + psibt[j + nx] + psibt[j - nx]) * 0.25;
+          psibt[j] += w * (nv - psibt[j]);
+        }
+      }
+    }
+  }
+  solvePsi(iters) {
+    const { nx, nz, dz, psip, om, solid, kb } = this;
+    const h2 = dz * dz;
+    if (this.nonhyd) {
+      const w = this.sor;
+      for (let it = 0; it < iters; it++) {
+        for (let k = 1; k < nz; k++) {
+          const r = k * nx;
+          for (let i = 0; i < nx; i++) {
+            const j = r + i; if (solid[j]) continue;
+            const e = i + 1 < nx ? j + 1 : r, wv = i > 0 ? j - 1 : r + nx - 1;
+            const nv = (psip[e] + psip[wv] + psip[j + nx] + psip[j - nx] - h2 * om[j]) * 0.25;
+            psip[j] += w * (nv - psip[j]);
+          }
+        }
+      }
+    } else {
+      // psi_zz = omega, column by column (Thomas algorithm)
+      const cp = this.t1, dp = this.t2;
+      for (let i = 0; i < nx; i++) {
+        const k0 = kb[i];
+        // unknowns k0..nz-1 ; a=1,b=-2,c=1
+        let prevc = 0, prevd = 0;
+        for (let k = k0; k < nz; k++) {
+          const j = k * nx + i;
+          const den = -2 - (k > k0 ? prevc : 0);
+          const c = 1 / den;
+          const d = (h2 * om[j] - (k > k0 ? prevd : 0)) / den;
+          cp[j] = c; dp[j] = d; prevc = c; prevd = d;
+        }
+        let next = 0;
+        for (let k = nz - 1; k >= k0; k--) {
+          const j = k * nx + i;
+          const v = dp[j] - cp[j] * next;
+          psip[j] = v; next = v;
+        }
+        for (let k = 0; k < k0; k++) psip[k * nx + i] = 0;
+        psip[nz * nx + i] = 0;
+      }
+    }
+  }
+  velocities() {
+    const { nx, nz, dx, dz, psi, psip, psibt, u, w, solid } = this;
+    const Q = this.Q;
+    for (let j = 0; j < this.n; j++) psi[j] = Q * psibt[j] + psip[j];
+    for (let k = 0; k <= nz; k++) {
+      const r = k * nx;
+      for (let i = 0; i < nx; i++) {
+        const j = r + i;
+        if (solid[j]) { u[j] = 0; w[j] = 0; continue; }
+        if (k === nz) { u[j] = (psi[j] - psi[j - nx]) / dz; w[j] = 0; continue; }
+        u[j] = (psi[j + nx] - psi[j - nx]) / (2 * dz);
+        const e = i + 1 < nx ? j + 1 : r, wv = i > 0 ? j - 1 : r + nx - 1;
+        w[j] = -(psi[e] - psi[wv]) / (2 * dx);
+      }
+    }
+  }
+  interp(a, x, z) {
+    const { nx, nz, dx, dz } = this;
+    let fx = x / dx; let i0 = Math.floor(fx); const ax = fx - i0;
+    i0 = ((i0 % nx) + nx) % nx; const i1 = i0 + 1 < nx ? i0 + 1 : 0;
+    let fz = z / dz; if (fz < 0) fz = 0; if (fz > nz - 1e-9) fz = nz - 1e-9;
+    const k0 = Math.floor(fz), az = fz - k0;
+    const r0 = k0 * nx, r1 = r0 + nx;
+    return (1 - az) * ((1 - ax) * a[r0 + i0] + ax * a[r0 + i1]) + az * ((1 - ax) * a[r1 + i0] + ax * a[r1 + i1]);
+  }
+  // Catmull-Rom interpolation, clipped to the local min/max (keeps the interface sharp without overshoots)
+  interpC(a, x, z) {
+    const { nx, nz, dx, dz } = this;
+    let fx = x / dx; let i1 = Math.floor(fx); const tx = fx - i1;
+    let fz = z / dz; if (fz < 0) fz = 0; if (fz > nz - 1e-9) fz = nz - 1e-9;
+    const k1 = Math.floor(fz), tz = fz - k1;
+    i1 = ((i1 % nx) + nx) % nx;
+    const i0 = i1 > 0 ? i1 - 1 : nx - 1, i2 = i1 + 1 < nx ? i1 + 1 : 0, i3 = i2 + 1 < nx ? i2 + 1 : 0;
+    const ks = [k1 > 0 ? k1 - 1 : 0, k1, k1 + 1, k1 + 2 <= nz ? k1 + 2 : nz];
+    const cr = (p0, p1, p2, p3, t) => p1 + 0.5 * t * (p2 - p0 + t * (2 * p0 - 5 * p1 + 4 * p2 - p3 + t * (3 * (p1 - p2) + p3 - p0)));
+    const row = new Array(4);
+    for (let m = 0; m < 4; m++) {
+      const r = ks[m] * nx;
+      row[m] = cr(a[r + i0], a[r + i1], a[r + i2], a[r + i3], tx);
+    }
+    let v = cr(row[0], row[1], row[2], row[3], tz);
+    const r1 = k1 * nx, r2 = (k1 + 1) * nx;
+    const p = a[r1 + i1], q = a[r1 + i2], s2 = a[r2 + i1], t2 = a[r2 + i2];
+    const lo = Math.min(p, q, s2, t2), hi = Math.max(p, q, s2, t2);
+    return v < lo ? lo : v > hi ? hi : v;
+  }
+  // convective adjustment: what hydrostatic ocean models do when heavy water ends up above light water
+  convect() {
+    const { nx, nz, b, kb } = this;
+    for (let pass = 0; pass < 3; pass++) {
+      for (let i = 0; i < nx; i++) {
+        for (let k = kb[i]; k < nz; k++) {
+          const j = k * nx + i, ju = j + nx;
+          if (b[ju] < b[j]) { const m = 0.5 * (b[ju] + b[j]); b[ju] = m; b[j] = m; }
+        }
+      }
+    }
+  }
+  step(dt) {
+    const { nx, nz, dx, dz, u, w, om, b, b0, solid } = this;
+    this.Q = this.U0 * this.H * Math.sin(2 * Math.PI * this.t / this.T);
+    this.velocities();
+    const omN = this.t1, bN = this.t2;
+    // semi-Lagrangian advection (RK2 backtrace)
+    for (let k = 0; k <= nz; k++) {
+      const z = k * dz, r = k * nx;
+      for (let i = 0; i < nx; i++) {
+        const j = r + i;
+        if (solid[j]) { omN[j] = 0; bN[j] = b0[j]; continue; }
+        const x = i * dx;
+        const xm = x - 0.5 * dt * u[j], zm = z - 0.5 * dt * w[j];
+        const um = this.interp(u, xm, zm), wm = this.interp(w, xm, zm);
+        const xd = x - dt * um, zd = z - dt * wm;
+        omN[j] = k === nz ? 0 : this.interp(om, xd, zd);
+        bN[j] = this.interpC(b, xd, zd);
+      }
+    }
+    // baroclinic torque + diffusion + sponge
+    const cx = dt / (2 * dx), nuc = this.nu * dt / (dx * dx), kac = this.kappa * dt / (dx * dx);
+    const Ls = this.Ls, rmax = 1.2, Lx = this.Lx;
+    for (let k = 1; k <= nz; k++) {
+      const r = k * nx;
+      for (let i = 0; i < nx; i++) {
+        const j = r + i;
+        if (solid[j]) { om[j] = 0; b[j] = b0[j]; continue; }
+        const e = i + 1 < nx ? j + 1 : r, wv = i > 0 ? j - 1 : r + nx - 1;
+        if (k === nz) {
+          om[j] = 0;
+          b[j] = bN[j] + kac * (bN[e] + bN[wv] + 2 * bN[j - nx] - 4 * bN[j]);
+        } else {
+          let o = omN[j] - cx * (bN[e] - bN[wv]);
+          o += nuc * (omN[e] + omN[wv] + omN[j + nx] + omN[j - nx] - 4 * omN[j]);
+          om[j] = o;
+          b[j] = bN[j] + kac * (bN[e] + bN[wv] + bN[j + nx] + bN[j - nx] - 4 * bN[j]);
+        }
+        const x = i * dx; const d = Math.min(x, Lx - x);
+        if (d < Ls) {
+          const s = 1 - d / Ls; const rr = rmax * s * s * dt;
+          om[j] /= 1 + rr;
+          b[j] = (b[j] + rr * b0[j]) / (1 + rr);
+        }
+      }
+    }
+    if (!this.nonhyd) this.convect();
+    this.t += dt;
+    this.Q = this.U0 * this.H * Math.sin(2 * Math.PI * this.t / this.T);
+    this.solvePsi(this.iters);
+  }
+  // composite internal Froude number over the sill crest
+  froude() {
+    const { nx, nz, dz, b, u } = this;
+    this.velocities();
+    const ic = Math.round(nx / 2), k0 = this.kb[ic];
+    let zint = null;
+    for (let k = k0; k < nz; k++) {
+      const a = b[k * nx + ic], c = b[(k + 1) * nx + ic];
+      if (a <= 0 && c > 0) { zint = (k + a / (a - c)) * dz; break; }
+    }
+    const hb = this.hx[ic];
+    if (zint === null) { const bb = b[k0 * nx + ic]; zint = bb > 0 ? hb : this.H; }
+    const h2 = Math.max(zint - hb, 0.01), h1 = Math.max(this.H - zint, 0.01);
+    let s1 = 0, n1 = 0, s2 = 0, n2 = 0;
+    for (let k = k0; k <= nz; k++) {
+      const z = k * dz, v = u[k * nx + ic];
+      if (z > zint) { s1 += v; n1++; } else { s2 += v; n2++; }
+    }
+    const u1 = n1 ? s1 / n1 : 0, u2 = n2 ? s2 / n2 : 0;
+    const G2 = (u1 * u1) / (this.db * h1) + (u2 * u2) / (this.db * h2);
+    return { G: Math.sqrt(G2), zint, h1, h2 };
+  }
+  healthy() {
+    for (let j = 0; j < this.n; j += 53) { const v = this.om[j]; if (!(Math.abs(v) < 1e4)) return false; }
+    return true;
+  }
+}
+
+// ===================== Stratified shear layer (Kelvin–Helmholtz) =====================
+// same solver, flat bottom, no tide, fully periodic in x. The horizontal-mean shear and
+// density profiles are nudged back to the chosen targets, so billows keep forming.
+class ShearLayer extends InternalWaves {
+  constructor(nx = 240, nz = 60, Lx = 4, H = 1) {
+    super(nx, nz, Lx, H);
+    this.hs = 0; this.U0 = 0; this.Ls = 0; this.nonhyd = true;
+    this.zi = 0.5 * (H + this.dz); this.delta = 0.06;
+    this.nu = 1.2e-4; this.kappa = 1.2e-4; this.iters = 20;
+    this.dU = 0.6; this.db = 0.5; this.tau = 7; this.noise = 0.06;
+    this.omT = new Float64Array(nz + 1);
+    this.restart();
+  }
+  buildBarotropic() { /* no tide in this module */ }
+  // gradient Richardson number at the interface for the chosen profiles: N² / S²
+  richardson() { return 2 * this.db * this.delta / (this.dU * this.dU); }
+  setTargets() {
+    this.setB0();
+    for (let k = 0; k <= this.nz; k++) {
+      const s = 1 / Math.cosh((k * this.dz - this.zi) / this.delta);
+      this.omT[k] = 0.5 * this.dU / this.delta * s * s;
+    }
+  }
+  restart() {
+    this.build(true); this.setTargets();
+    const { nx, nz } = this;
+    for (let k = 1; k < nz; k++) for (let i = 0; i < nx; i++) this.om[k * nx + i] = this.omT[k];
+    this.solvePsi(600);
+  }
+  step(dt) {
+    const { nx, nz, om, b, b0, omT } = this;
+    const r = dt / this.tau, amp = this.noise * this.dU / this.delta;
+    for (let k = 1; k < nz; k++) {
+      const row = k * nx; let so = 0, sb = 0;
+      for (let i = 0; i < nx; i++) { so += om[row + i]; sb += b[row + i]; }
+      const co = r * (omT[k] - so / nx), cb = r * (b0[row] - sb / nx);
+      const seed = Math.abs(k * this.dz - this.zi) < 2 * this.delta;
+      for (let i = 0; i < nx; i++) {
+        om[row + i] += co + (seed ? amp * (Math.random() - 0.5) * dt : 0);
+        b[row + i] += cb;
+      }
+    }
+    super.step(dt);
+  }
+  // thickness of the blended zone, from the horizontal-mean density profile (fraction of the depth)
+  mixing() {
+    const { nx, nz, b } = this; const q = 2 / this.db; let s = 0;
+    for (let k = 1; k <= nz; k++) {
+      const row = k * nx; let m = 0;
+      for (let i = 0; i < nx; i++) m += b[row + i];
+      m = m / nx * q; s += 1 - m * m;
+    }
+    return s / nz;
+  }
+  // rms vertical displacement of the interface (in units of H): how rolled-up it is
+  wiggle() {
+    const { nx, nz, dz, w } = this; let s = 0;
+    const k = Math.round(this.zi / dz);
+    for (let i = 0; i < nx; i++) { const v = w[k * nx + i]; s += v * v; }
+    return Math.sqrt(s / nx) / Math.max(this.dU, 1e-6);
+  }
+}
+
+
+</script>
+<script>
+(() => {
+'use strict';
+const $ = (s) => document.querySelector(s);
+const cssCache = {};
+const css = (name) => cssCache[name] || (cssCache[name] = getComputedStyle(document.documentElement).getPropertyValue(name).trim());
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const THIN = ' ';
+
+// ---------- number formatting (SI: thin space for 5+ digits, decimal point) ----------
+function groupInt(n) {
+  const s = String(Math.round(n));
+  if (s.length <= 4) return s;
+  return s.replace(/\B(?=(\d{3})+(?!\d))/g, THIN);
+}
+function fmtNum(v) {
+  if (!isFinite(v)) return '—';
+  if (v >= 100) { const p = Math.pow(10, Math.floor(Math.log10(v)) - 2); return groupInt(Math.round(v / p) * p); }
+  if (v >= 1) return String(Number(v.toPrecision(3)));
+  if (v >= 0.001) return String(Number(v.toPrecision(2)));
+  const e = Math.floor(Math.log10(v)); const m = v / Math.pow(10, e);
+  const sup = { '-': '⁻', 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹' };
+  return m.toFixed(1) + '×10' + String(e).split('').map((c) => sup[c]).join('');
+}
+function hexToRgb(h) { const n = parseInt(h.replace('#', ''), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+function mix(a, b, t) { return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+const LITTLE = new Uint8Array(new Uint32Array([1]).buffer)[0] === 1;
+function pack(c, a = 255) {
+  const r = c[0] | 0, g = c[1] | 0, b = c[2] | 0;
+  return LITTLE ? ((a << 24) | (b << 16) | (g << 8) | r) >>> 0 : ((r << 24) | (g << 16) | (b << 8) | a) >>> 0;
+}
+
+// ---------- canvas helpers ----------
+function fitCanvas(cv) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = Math.max(1, Math.round(cv.clientWidth * dpr)), h = Math.max(1, Math.round(cv.clientHeight * dpr));
+  if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+  return dpr;
+}
+function letterbox(W, H, A) {
+  if (W / H > A) { const w = H * A; return { x: (W - w) / 2, y: 0, w, h: H }; }
+  const h = W / A; return { x: 0, y: (H - h) / 2, w: W, h };
+}
+function toast(id, msg) {
+  const el = $(id); el.textContent = msg; el.hidden = false;
+  clearTimeout(el._t); el._t = setTimeout(() => { el.hidden = true; }, 2600);
+}
+function segButtons(container, items, onPick) {
+  container.innerHTML = '';
+  items.forEach((it, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.id = container.id + '-' + it.id;
+    b.innerHTML = it.name + (it.hint ? `<small>${it.hint}</small>` : '');
+    b.addEventListener('click', (e) => { onPick(i); if (e.detail > 0) b.blur(); });
+    container.appendChild(b);
+  });
+  return (sel) => [...container.children].forEach((b, i) => b.setAttribute('aria-pressed', String(i === sel)));
+}
+
+// ---------- gauge (SVG) ----------
+const SVGNS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent, text) {
+  const e = document.createElementNS(SVGNS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text !== undefined) e.textContent = text;
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function buildGauge(box, opt) {
+  const W = 600, X0 = 14, X1 = 586, BY = 44, BH = 14;
+  const svg = el('svg', { viewBox: `0 0 ${W} 112`, role: 'img', 'aria-label': opt.aria });
+  const pos = (v) => X0 + (opt.map(v) - opt.map(opt.min)) / (opt.map(opt.max) - opt.map(opt.min)) * (X1 - X0);
+  opt.zones.forEach((z) => {
+    el('rect', { x: pos(z.a), y: BY, width: Math.max(0, pos(z.b) - pos(z.a)), height: BH, fill: z.color, opacity: 0.9 }, svg);
+  });
+  opt.ticks.forEach((t) => {
+    const x = pos(t.v);
+    el('line', { x1: x, x2: x, y1: BY + BH, y2: BY + BH + 5, stroke: css('--muted'), 'stroke-width': 1.5 }, svg);
+    el('text', { x, y: BY + BH + 20, 'text-anchor': t.anchor || 'middle', fill: css('--muted'), 'font-size': 13, 'font-family': css('--f-body') }, svg, t.label);
+  });
+  (opt.marks || []).forEach((m) => {
+    const x = pos(m.v);
+    el('line', { x1: x, x2: x, y1: 24, y2: BY, stroke: css('--fg'), 'stroke-width': 1, opacity: 0.5 }, svg);
+    el('text', { x, y: 18, 'text-anchor': m.anchor || 'middle', fill: css('--fg'), 'font-size': 14, 'font-family': css('--f-body'), 'font-weight': 700 }, svg, m.label);
+  });
+  if (opt.band) {
+    const a = pos(opt.band.a), b = pos(opt.band.b), y = BY + BH + 36;
+    el('path', { d: `M${a} ${y - 6} V${y} H${b} V${y - 6}`, fill: 'none', stroke: css('--buoy'), 'stroke-width': 2 }, svg);
+    el('text', { x: (a + b) / 2, y: y + 16, 'text-anchor': 'middle', fill: css('--buoy'), 'font-size': 13, 'font-family': css('--f-body'), 'font-weight': 700 }, svg, opt.band.label);
+  }
+  const needle = el('g', {}, svg);
+  el('path', { d: `M0 ${BY - 4} L-7 ${BY - 15} H7 Z`, fill: css('--fg') }, needle);
+  el('line', { x1: 0, x2: 0, y1: BY - 4, y2: BY + BH + 3, stroke: css('--fg'), 'stroke-width': 3 }, needle);
+  box.innerHTML = ''; box.appendChild(svg);
+  return (v) => { const x = clamp(pos(clamp(v, opt.min, opt.max)), X0, X1); needle.setAttribute('transform', `translate(${x.toFixed(1)} 0)`); };
+}
+
+// ==================================================================
+//                          MÓDULO 1: REYNOLDS
+// ==================================================================
+const RE = {
+  nx: 300, ny: 100, cm: 0.5, // each cell = 0.5 cm
+  fluids: [
+    // K = Reynolds number on screen at full speed for the default rock (the slider spans K/12 … K)
+    { id: 'miel', name: 'Miel', hint: 'muy espesa', K: 14 },
+    { id: 'aceite', name: 'Aceite', hint: 'espeso', K: 110 },
+    { id: 'agua', name: 'Agua', hint: 'nada espesa', K: 800 },
+  ],
+  shapes: [
+    { id: 'circulo', name: 'Roca' },
+    { id: 'placa', name: 'Placa' },
+    { id: 'ala', name: 'Ala' },
+    { id: 'islas', name: 'Islas' },
+  ],
+  views: [{ id: 'remolinos', name: 'Remolinos' }, { id: 'tinta', name: 'Tinta' }],
+  fluid: 2, shape: 0, view: 0, size: 9, speedT: 60,
+  ReSim: 150, ReMax: 900, D: 18, msStep: 1.5, state: -2,
+};
+const lbm = new LBM(RE.nx, RE.ny);
+const cvRe = $('#cv-re'), ctxRe = cvRe.getContext('2d');
+const offRe = document.createElement('canvas'); offRe.width = RE.nx; offRe.height = RE.ny;
+const offReCtx = offRe.getContext('2d');
+const imgRe = offReCtx.createImageData(RE.nx, RE.ny);
+const pixRe = new Uint32Array(imgRe.data.buffer);
+
+// colour tables
+const LUT_VORT = new Uint32Array(512), LUT_SPEED = new Uint32Array(256);
+let ROCK_RE = 0;
+function buildReLuts() {
+  const bg = hexToRgb('#0f2331'), neg = hexToRgb('#46c2ff'), pos = hexToRgb('#ff6b5a');
+  const negHi = hexToRgb('#d8f3ff'), posHi = hexToRgb('#ffe1c2');
+  for (let i = 0; i < 512; i++) {
+    const v = (i - 255.5) / 255.5; const a = Math.min(1, Math.abs(v));
+    const t = Math.pow(a, 0.7);
+    let c = mix(bg, v < 0 ? neg : pos, Math.min(1, t * 1.4));
+    if (t > 0.72) c = mix(c, v < 0 ? negHi : posHi, (t - 0.72) / 0.28 * 0.6);
+    LUT_VORT[i] = pack(c);
+  }
+  const s0 = hexToRgb('#0b1c29'), s1 = hexToRgb('#1d4a66'), s2 = hexToRgb('#3d86a6');
+  for (let i = 0; i < 256; i++) { const t = i / 255; LUT_SPEED[i] = pack(t < 0.6 ? mix(s0, s1, t / 0.6) : mix(s1, s2, (t - 0.6) / 0.4)); }
+  ROCK_RE = pack(hexToRgb('#c8b28a'));
+}
+buildReLuts();
+
+function buildShape() {
+  const { nx, ny } = RE; const s = lbm.solid; s.fill(0);
+  const r = RE.size, cx = Math.round(nx * 0.22), cy = ny / 2 + 0.3;
+  const disk = (x0, y0, rr) => {
+    for (let y = Math.floor(y0 - rr - 1); y <= y0 + rr + 1; y++) for (let x = Math.floor(x0 - rr - 1); x <= x0 + rr + 1; x++) {
+      if (x < 3 || x > nx - 4 || y < 0 || y >= ny) continue;
+      const dx = x - x0, dy = y - y0; if (dx * dx + dy * dy <= rr * rr) s[y * nx + x] = 1;
+    }
+  };
+  const id = RE.shapes[RE.shape].id;
+  if (id === 'circulo') disk(cx, cy, r);
+  else if (id === 'placa') {
+    for (let y = Math.round(cy - r); y <= Math.round(cy + r); y++) for (let x = cx - 1; x <= cx + 1; x++) s[y * nx + x] = 1;
+  } else if (id === 'ala') {
+    const c = 4.2 * r, ang = -16 * Math.PI / 180, ca = Math.cos(ang), sa = Math.sin(ang);
+    for (let y = 0; y < ny; y++) for (let x = 3; x < nx - 3; x++) {
+      const X = (x - cx) * ca + (y - cy) * sa, Y = -(x - cx) * sa + (y - cy) * ca;
+      const xi = (X + c / 2) / c; if (xi < 0 || xi > 1) continue;
+      const t = 5 * 0.16 * c * (0.2969 * Math.sqrt(xi) - 0.126 * xi - 0.3516 * xi * xi + 0.2843 * xi ** 3 - 0.1015 * xi ** 4);
+      if (Math.abs(Y) <= t) s[y * nx + x] = 1;
+    }
+  } else if (id === 'islas') {
+    disk(cx - 0.6 * r, cy - 1.5 * r, 0.6 * r);
+    disk(cx + 1.4 * r, cy + 0.3 * r, 0.75 * r);
+    disk(cx - 0.4 * r, cy + 1.8 * r, 0.5 * r);
+  }
+  lbm.reset();
+  particlesRe.n = 0; resetProbeRe();
+  updateReParams();
+}
+
+// Every position of the controls maps to a Reynolds number the screen really computes (1 … 900).
+function updateReParams() {
+  const f = RE.fluids[RE.fluid];
+  const Dc = lbm.frontalHeight(); RE.D = Dc;
+  if (Dc < 1) { RE.ReSim = NaN; lbm.Uset = 0.08; lbm.nu = 0.02; return; }
+  const t = RE.speedT / 100;
+  const Re = clamp(f.K * Math.pow(12, t - 1) * Dc / 18, 1, RE.ReMax);
+  RE.ReSim = Re;
+  let U = 0.03 + 0.09 * t, nu = U * Dc / Re; // faster slider = visibly faster flow
+  if (nu > 0.5) { nu = 0.5; U = Re * nu / Dc; }
+  lbm.Uset = U; lbm.nu = nu;
+}
+
+// how much the wake wobbles in time, measured on the simulation itself
+const probeRe = (() => {
+  const idx = [];
+  for (let x = Math.round(RE.nx * 0.36); x < RE.nx * 0.88; x += 12) for (let y = 3; y < RE.ny; y += 6) idx.push(y * RE.nx + x);
+  return { idx, m: new Float32Array(idx.length), v: new Float32Array(idx.length), level: 0 };
+})();
+function resetProbeRe() { probeRe.m.fill(0); probeRe.v.fill(0); probeRe.level = 0; }
+function sampleProbeRe(nsteps) {
+  const P = probeRe, a = Math.min(0.2, nsteps / 1000), uy = lbm.uy; let s = 0;
+  for (let p = 0; p < P.idx.length; p++) {
+    const d = uy[P.idx[p]] - P.m[p];
+    P.m[p] += a * d; P.v[p] += a * (d * d - P.v[p]); s += P.v[p];
+  }
+  P.level = Math.sqrt(s / P.idx.length) / Math.max(lbm.U, 1e-4);
+}
+const RE_SUBS = {
+  '-1': 'Dibuja una roca con el mouse sobre el agua.',
+  0: 'El fluido rodea el objeto suave y parejo, sin soltar remolinos.',
+  1: 'Detrás del objeto se sueltan remolinos, uno a cada lado.',
+  2: 'Los remolinos salen grandes y fuertes, y revuelven toda el agua detrás del objeto.',
+};
+function updateRegimeRe() {
+  let st;
+  if (!(RE.D >= 1)) st = -1;
+  else if (probeRe.level < (RE.state >= 1 ? 0.06 : 0.08)) st = 0;
+  else st = RE.ReSim < 350 ? 1 : 2;
+  if (st === RE.state) return;
+  RE.state = st;
+  [...$('#re-lights').children].forEach((el, i) => el.classList.toggle('on', i === st));
+  $('#re-regime-sub').textContent = RE_SUBS[st];
+}
+
+// particles (dye)
+const particlesRe = { x: new Float32Array(7000), y: new Float32Array(7000), c: new Uint8Array(7000), n: 0 };
+function sampleRe(a, x, y) {
+  const { nx, ny } = RE;
+  const x0 = clamp(Math.floor(x), 0, nx - 2), ax = clamp(x - x0, 0, 1);
+  let y0 = Math.floor(y); const ay = y - y0; y0 = ((y0 % ny) + ny) % ny; const y1 = y0 + 1 < ny ? y0 + 1 : 0;
+  return (1 - ay) * ((1 - ax) * a[y0 * nx + x0] + ax * a[y0 * nx + x0 + 1]) + ay * ((1 - ax) * a[y1 * nx + x0] + ax * a[y1 * nx + x0 + 1]);
+}
+function advectParticlesRe(nsteps) {
+  const P = particlesRe, { nx, ny } = RE;
+  // emit
+  for (let row = 0; row < 17 && P.n < P.x.length; row++) {
+    P.x[P.n] = 1.2; P.y[P.n] = 3 + row * 5.75 + (Math.random() - 0.5) * 0.4; P.c[P.n] = row & 1; P.n++;
+  }
+  let w = 0;
+  for (let i = 0; i < P.n; i++) {
+    let x = P.x[i], y = P.y[i];
+    x += sampleRe(lbm.ux, x, y) * nsteps; y += sampleRe(lbm.uy, x, y) * nsteps;
+    if (y < 0) y += ny; if (y >= ny) y -= ny;
+    if (x >= nx - 2) continue;
+    const xi = Math.round(x), yi = Math.round(y) % ny;
+    if (lbm.solid[yi * nx + clamp(xi, 0, nx - 1)]) continue;
+    P.x[w] = x; P.y[w] = y; P.c[w] = P.c[i]; w++;
+  }
+  P.n = w;
+}
+
+function drawRe() {
+  const dpr = fitCanvas(cvRe);
+  const W = cvRe.width, H = cvRe.height, { nx, ny } = RE;
+  const R = letterbox(W, H, nx / ny); RE.rect = R;
+  const ux = lbm.ux, uy = lbm.uy, s = lbm.solid;
+  const tinta = RE.views[RE.view].id === 'tinta';
+  const U = Math.max(lbm.U, 1e-4);
+  const vs = RE.D > 0 ? 255.5 / (3.2 * U / Math.max(RE.D, 4)) : 2000;
+  const ss = 255 / (1.8 * U);
+  for (let y = 0; y < ny; y++) {
+    const yu = (y + 1 < ny ? y + 1 : 0) * nx, yd = (y > 0 ? y - 1 : ny - 1) * nx, r = y * nx;
+    for (let x = 0; x < nx; x++) {
+      const i = r + x;
+      if (s[i]) { pixRe[i] = ROCK_RE; continue; }
+      if (tinta) {
+        const sp = Math.sqrt(ux[i] * ux[i] + uy[i] * uy[i]);
+        pixRe[i] = LUT_SPEED[Math.min(255, (sp * ss) | 0)];
+      } else {
+        const xe = x + 1 < nx ? i + 1 : i, xw = x > 0 ? i - 1 : i;
+        const om = 0.5 * ((uy[xe] - uy[xw]) - (ux[yu + x] - ux[yd + x]));
+        let k = (om * vs + 255.5) | 0; k = k < 0 ? 0 : k > 511 ? 511 : k;
+        pixRe[i] = LUT_VORT[k];
+      }
+    }
+  }
+  offReCtx.putImageData(imgRe, 0, 0);
+  ctxRe.fillStyle = css('--deep'); ctxRe.fillRect(0, 0, W, H);
+  ctxRe.imageSmoothingEnabled = true; ctxRe.imageSmoothingQuality = 'high';
+  ctxRe.drawImage(offRe, R.x, R.y, R.w, R.h);
+  if (tinta) {
+    const P = particlesRe, sx = R.w / nx, sy = R.h / ny, sz = Math.max(1.6, 1.3 * dpr);
+    const cols = [css('--buoy'), css('--fresh')];
+    for (let c = 0; c < 2; c++) {
+      ctxRe.fillStyle = cols[c];
+      for (let i = 0; i < P.n; i++) if (P.c[i] === c) ctxRe.fillRect(R.x + P.x[i] * sx - sz / 2, R.y + P.y[i] * sy - sz / 2, sz, sz);
+    }
+  }
+}
+
+function stepRe(budget) {
+  const n = clamp(Math.round(budget / RE.msStep), 1, 18);
+  const t0 = performance.now();
+  for (let i = 0; i < n; i++) lbm.step();
+  const ms = (performance.now() - t0) / n;
+  RE.msStep += (ms - RE.msStep) * 0.1;
+  if (RE.views[RE.view].id === 'tinta') advectParticlesRe(n);
+  sampleProbeRe(n);
+  if (!lbm.healthy()) { buildShape(); toast('#toast-re', 'La simulación se reinició'); }
+}
+
+// painting with the mouse
+let painting = null, lastCell = null;
+function cellFromEvent(e) {
+  const R = RE.rect; if (!R) return null;
+  const b = cvRe.getBoundingClientRect(), dpr = cvRe.width / b.width;
+  const px = (e.clientX - b.left) * dpr, py = (e.clientY - b.top) * dpr;
+  return { x: (px - R.x) / R.w * RE.nx, y: (py - R.y) / R.h * RE.ny };
+}
+function paintAt(c, solid) {
+  const { nx, ny } = RE, N = lbm.N, f = lbm.f, br = 2.6;
+  for (let y = Math.floor(c.y - br); y <= c.y + br; y++) for (let x = Math.floor(c.x - br); x <= c.x + br; x++) {
+    if (x < 3 || x > nx - 4 || y < 0 || y >= ny) continue;
+    const dx = x - c.x, dy = y - c.y; if (dx * dx + dy * dy > br * br) continue;
+    const i = y * nx + x;
+    if (solid) lbm.solid[i] = 1;
+    else if (lbm.solid[i]) { lbm.solid[i] = 0; for (let k = 0; k < 9; k++) f[k * N + i] = LB_W[k]; }
+  }
+}
+cvRe.addEventListener('contextmenu', (e) => e.preventDefault());
+cvRe.addEventListener('pointerdown', (e) => {
+  painting = !(e.button === 2 || e.shiftKey); lastCell = cellFromEvent(e);
+  cvRe.setPointerCapture(e.pointerId); if (lastCell) paintAt(lastCell, painting);
+});
+cvRe.addEventListener('pointermove', (e) => {
+  if (painting === null) return;
+  const c = cellFromEvent(e); if (!c || !lastCell) return;
+  const d = Math.hypot(c.x - lastCell.x, c.y - lastCell.y), n = Math.max(1, Math.ceil(d / 1.2));
+  for (let i = 1; i <= n; i++) paintAt({ x: lastCell.x + (c.x - lastCell.x) * i / n, y: lastCell.y + (c.y - lastCell.y) * i / n }, painting);
+  lastCell = c;
+});
+const endPaint = () => { if (painting !== null) { painting = null; updateReParams(); } };
+cvRe.addEventListener('pointerup', endPaint); cvRe.addEventListener('pointercancel', endPaint);
+
+// controls
+const setFluidUI = segButtons($('#re-fluids'), RE.fluids, (i) => { RE.fluid = i; setFluidUI(i); updateReParams(); });
+const setShapeUI = segButtons($('#re-shapes'), RE.shapes, (i) => { RE.shape = i; setShapeUI(i); buildShape(); });
+const setViewUI = segButtons($('#re-views'), RE.views, (i) => { RE.view = i; setViewUI(i); particlesRe.n = 0; });
+setFluidUI(RE.fluid); setShapeUI(RE.shape); setViewUI(RE.view);
+RE.speedT = +$('#re-speed').value;
+$('#re-speed').addEventListener('input', (e) => { RE.speedT = +e.target.value; updateReParams(); });
+$('#re-size').addEventListener('input', (e) => { RE.size = +e.target.value; buildShape(); });
+
+// ==================================================================
+//                    MÓDULO 2: ONDAS INTERNAS
+// ==================================================================
+const IW = { nx: 240, nz: 60, dt: 0.02, msStep: 4, Hm: 100, G: 0, frame: 0 };
+const iw = new InternalWaves(IW.nx, IW.nz, 4, 1);
+iw.T = 16;
+const cvIw = $('#cv-iw'), ctxIw = cvIw.getContext('2d');
+const offIw = document.createElement('canvas'); offIw.width = IW.nx; offIw.height = IW.nz + 1;
+const offIwCtx = offIw.getContext('2d');
+const imgIw = offIwCtx.createImageData(IW.nx, IW.nz + 1);
+const pixIw = new Uint32Array(imgIw.data.buffer);
+const LUT_RHO = new Uint32Array(256);
+(() => {
+  const dense = hexToRgb('#182c66'), midc = hexToRgb('#2a7d9b'), fresh = hexToRgb('#9be8cf');
+  for (let i = 0; i < 256; i++) { const t = i / 255; LUT_RHO[i] = pack(t < 0.5 ? mix(dense, midc, t / 0.5) : mix(midc, fresh, (t - 0.5) / 0.5)); }
+})();
+
+const iwMap = {
+  U0: (t) => 0.04 + 0.46 * t / 100,
+  db: (t) => 0.35 + 1.65 * t / 100,
+  hs: (t) => 0.25 + 0.37 * t / 100,
+};
+function iwLabels() {
+  $('#iw-sill-out').textContent = Math.round(iw.hs * IW.Hm) + ' m de alto';
+}
+let sillTimer = null;
+$('#iw-tidein').addEventListener('input', (e) => { iw.U0 = iwMap.U0(+e.target.value); iwLabels(); });
+$('#iw-fresh').addEventListener('input', (e) => {
+  const nd = iwMap.db(+e.target.value), r = nd / iw.db; iw.db = nd;
+  for (let j = 0; j < iw.n; j++) iw.b[j] *= r;
+  iw.setB0(); iwLabels();
+});
+$('#iw-sill').addEventListener('input', (e) => {
+  iw.hs = iwMap.hs(+e.target.value); iwLabels();
+  clearTimeout(sillTimer); sillTimer = setTimeout(() => { iw.build(false); resetParticlesIw(); }, 180);
+});
+const modes = [{ id: 'hid', name: 'Simplificado', hint: 'hidrostático' }, { id: 'nohid', name: 'Completo', hint: 'no hidrostático' }];
+const setModeUI = segButtons($('#iw-modes'), modes, (i) => setMode(i === 1));
+function setMode(nonhyd) {
+  iw.nonhyd = nonhyd;
+  // hydrostatic models need more mixing/diffusion to stay smooth
+  iw.nu = iw.kappa = nonhyd ? 3e-4 : 2e-3;
+  iw.buildBarotropic(); iw.solvePsi(nonhyd ? 400 : 0);
+  setModeUI(nonhyd ? 1 : 0);
+  $('#iw-modetag').textContent = nonhyd ? 'Cálculo completo' : 'Cálculo simplificado';
+  $('#iw-modeexplain').textContent = nonhyd
+    ? 'Cálculo completo. Incluye el sube y baja del agua, y por eso aparecen olas cortas. Es el que estudiamos en este proyecto.'
+    : 'Cálculo simplificado. Es más rápido y lo usa la mayoría de los modelos del mar, pero pierde las olas cortas. ¿Notas la diferencia?';
+}
+iw.U0 = iwMap.U0(+$('#iw-tidein').value);
+iw.db = iwMap.db(+$('#iw-fresh').value);
+iw.hs = iwMap.hs(+$('#iw-sill').value);
+iw.build(true);
+setMode(true); iwLabels();
+
+const needleFr = buildGauge($('#fr-gauge'), {
+  aria: 'Escala del número de Froude interno', min: 0, max: 2.5, map: (v) => v,
+  zones: [
+    { a: 0, b: 0.8, color: css('--calm') },
+    { a: 0.8, b: 1.2, color: css('--warn') },
+    { a: 1.2, b: 2.5, color: css('--hot') },
+  ],
+  ticks: [{ v: 0, label: '0', anchor: 'start' }, { v: 0.5, label: '0.5' }, { v: 1, label: '1' }, { v: 1.5, label: '1.5' }, { v: 2, label: '2' }, { v: 2.5, label: '2.5', anchor: 'end' }],
+  marks: [{ v: 0.4, label: 'ganan las olas' }, { v: 1, label: 'empate' }, { v: 1.85, label: 'gana la corriente' }],
+});
+function setRegimeFr(G) {
+  const box = $('#fr-regime'), dot = box.querySelector('i'), txt = box.querySelector('span'), sub = $('#fr-regime-sub');
+  let c, t, s;
+  if (G < 0.8) { c = '--calm'; t = 'Ganan las olas'; s = 'Las olas escondidas viajan más rápido que la corriente y se alejan del umbral.'; }
+  else if (G < 1.2) { c = '--warn'; t = 'Empate'; s = 'La corriente va tan rápido como las olas, que quedan atrapadas sobre el umbral.'; }
+  else { c = '--hot'; t = 'Gana la corriente'; s = 'La corriente arrastra las olas. Detrás del umbral el agua cae como una cascada bajo el mar.'; }
+  if (txt.textContent !== t) { dot.style.background = `var(${c})`; txt.textContent = t; sub.textContent = s; }
+}
+
+// tracer particles
+const PIW = 520;
+const particlesIw = { x: new Float32Array(PIW), z: new Float32Array(PIW), life: new Float32Array(PIW) };
+function hAt(x) { const s = (x - iw.Lx / 2) / iw.ws; return iw.hs * Math.exp(-s * s); }
+function spawnIw(i) {
+  const x = Math.random() * iw.Lx, h = hAt(x);
+  particlesIw.x[i] = x; particlesIw.z[i] = h + 0.02 + Math.random() * (iw.H - h - 0.04);
+  particlesIw.life[i] = 4 + Math.random() * 10;
+}
+function resetParticlesIw() { for (let i = 0; i < PIW; i++) spawnIw(i); }
+resetParticlesIw();
+function advectParticlesIw(tsum) {
+  const P = particlesIw;
+  for (let i = 0; i < PIW; i++) {
+    let x = P.x[i], z = P.z[i];
+    x += iw.interp(iw.u, x, z) * tsum; z += iw.interp(iw.w, x, z) * tsum;
+    if (x < 0) x += iw.Lx; if (x >= iw.Lx) x -= iw.Lx;
+    P.life[i] -= tsum;
+    if (P.life[i] <= 0 || z <= hAt(x) + 0.005 || z >= iw.H - 0.003) { spawnIw(i); continue; }
+    P.x[i] = x; P.z[i] = z;
+  }
+}
+
+function stepIw(budget) {
+  const n = clamp(Math.round(budget / IW.msStep), 1, 8);
+  const t0 = performance.now();
+  for (let i = 0; i < n; i++) iw.step(IW.dt);
+  const ms = (performance.now() - t0) / n;
+  IW.msStep += (ms - IW.msStep) * 0.1;
+  iw.velocities();
+  advectParticlesIw(n * IW.dt);
+  if (!iw.healthy()) { iw.build(true); resetParticlesIw(); toast('#toast-iw', 'La simulación se reinició'); }
+}
+
+function drawIw() {
+  const dpr = fitCanvas(cvIw);
+  const W = cvIw.width, H = cvIw.height, { nx, nz } = IW;
+  const R = letterbox(W, H, 3);
+  const b = iw.b, solid = iw.solid, inv = 1 / iw.db;
+  for (let k = 0; k <= nz; k++) {
+    const row = (nz - k) * nx, r = k * nx;
+    for (let i = 0; i < nx; i++) {
+      const j = r + i;
+      let t = solid[j] ? 0 : (b[j] * inv + 0.5);
+      t = t < 0 ? 0 : t > 1 ? 1 : t;
+      pixIw[row + i] = LUT_RHO[(t * 255) | 0];
+    }
+  }
+  offIwCtx.putImageData(imgIw, 0, 0);
+  const c = ctxIw;
+  c.fillStyle = css('--deep'); c.fillRect(0, 0, W, H);
+  c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+  c.drawImage(offIw, R.x, R.y, R.w, R.h);
+  const X = (x) => R.x + (x / iw.dx + 0.5) / nx * R.w;
+  const Y = (z) => R.y + ((nz - z / iw.dz) + 0.5) / (nz + 1) * R.h;
+  // sill (crisp)
+  c.beginPath(); c.moveTo(R.x, R.y + R.h);
+  for (let i = 0; i <= 120; i++) { const x = i / 120 * iw.Lx; c.lineTo(R.x + i / 120 * R.w, Y(hAt(x))); }
+  c.lineTo(R.x + R.w, R.y + R.h); c.closePath();
+  const grd = c.createLinearGradient(0, Y(iw.hs), 0, R.y + R.h);
+  grd.addColorStop(0, css('--rock')); grd.addColorStop(1, '#6f5f45');
+  c.fillStyle = grd; c.fill();
+  // particles
+  c.fillStyle = 'rgba(233, 242, 244, 0.55)';
+  const sz = Math.max(1.6, 1.4 * dpr), P = particlesIw;
+  for (let i = 0; i < PIW; i++) c.fillRect(X(P.x[i]) - sz / 2, Y(P.z[i]) - sz / 2, sz, sz);
+  // surface
+  c.strokeStyle = 'rgba(233, 242, 244, 0.8)'; c.lineWidth = 2 * dpr;
+  c.beginPath(); c.moveTo(R.x, R.y + dpr); c.lineTo(R.x + R.w, R.y + dpr); c.stroke();
+  // labels
+  const fs = Math.round(clamp(R.h * 0.045, 12 * dpr, 20 * dpr));
+  c.font = `700 ${fs}px ${css('--f-body')}`; c.textBaseline = 'middle';
+  c.fillStyle = '#0a1822'; c.textAlign = 'left';
+  c.fillText('agua dulce', R.x + 14 * dpr, R.y + R.h * 0.2);
+  c.fillStyle = 'rgba(233, 242, 244, 0.9)';
+  c.fillText('agua salada', R.x + 14 * dpr, R.y + R.h * 0.82);
+  c.fillStyle = '#2b2416'; c.textAlign = 'center';
+  c.fillText('umbral', X(iw.Lx / 2), Y(iw.hs) + 0.55 * (R.y + R.h - Y(iw.hs)));
+  c.fillStyle = 'rgba(10, 24, 34, 0.8)'; c.textAlign = 'center';
+  c.font = `700 ${Math.round(fs * 0.8)}px ${css('--f-body')}`;
+  c.fillText('arriba, la superficie se ve tranquila', R.x + R.w / 2, R.y + fs * 0.9);
+  // depth axis
+  c.textAlign = 'right'; c.fillStyle = 'rgba(233, 242, 244, 0.75)'; c.strokeStyle = 'rgba(233, 242, 244, 0.5)'; c.lineWidth = dpr;
+  for (const d of [50, 100]) {
+    const yy = Y(1 - d / IW.Hm) + (d === 100 ? -fs * 0.7 : 0);
+    c.beginPath(); c.moveTo(R.x + R.w - 6 * dpr, Y(1 - d / IW.Hm)); c.lineTo(R.x + R.w, Y(1 - d / IW.Hm)); c.stroke();
+    c.lineWidth = 3 * dpr; c.strokeStyle = 'rgba(10, 24, 34, 0.75)'; c.strokeText(d + ' m', R.x + R.w - 10 * dpr, yy);
+    c.fillText(d + ' m', R.x + R.w - 10 * dpr, yy); c.lineWidth = dpr; c.strokeStyle = 'rgba(233, 242, 244, 0.5)';
+  }
+}
+function updateTideTag() {
+  const q = Math.sin(2 * Math.PI * iw.t / iw.T);
+  const n = Math.round(Math.abs(q) * 4);
+  const bars = '▮'.repeat(n) + '▯'.repeat(4 - n);
+  const hr = ((iw.t / iw.T) % 1) * 12.4;
+  const dir = Math.abs(q) < 0.12 ? 'Estoa (cambio de marea)' : q > 0 ? 'Corriente de marea →' : '← Corriente de marea';
+  $('#iw-tide').innerHTML = `<span class="arrow">${bars}</span> ${dir} · hora ${hr.toFixed(1)} de 12.4`;
+}
+
+// ==================================================================
+//                    MÓDULO 3: RICHARDSON
+// ==================================================================
+const RI = { nx: 240, nz: 60, dt: 0.03, msStep: 5, mix: 0, regime: '' };
+const sl = new ShearLayer(RI.nx, RI.nz, 4, 1);
+const cvRi = $('#cv-ri'), ctxRi = cvRi.getContext('2d');
+const offRi = document.createElement('canvas'); offRi.width = RI.nx; offRi.height = RI.nz + 1;
+const offRiCtx = offRi.getContext('2d');
+const imgRi = offRiCtx.createImageData(RI.nx, RI.nz + 1);
+const pixRi = new Uint32Array(imgRi.data.buffer);
+const riMap = {
+  dU: (t) => 0.4 + 0.6 * t / 100,
+  db: (t) => 0.05 + 1.45 * t / 100,
+};
+const PRI = 420;
+const particlesRi = { x: new Float32Array(PRI), z: new Float32Array(PRI), life: new Float32Array(PRI) };
+function spawnRi(i) {
+  particlesRi.x[i] = Math.random() * sl.Lx; particlesRi.z[i] = 0.04 + Math.random() * (sl.H - 0.08);
+  particlesRi.life[i] = 4 + Math.random() * 10;
+}
+function resetParticlesRi() { for (let i = 0; i < PRI; i++) spawnRi(i); }
+function restartRi() { sl.restart(); sl.velocities(); resetParticlesRi(); RI.mix = 0; }
+function setShear(t) {
+  const nd = riMap.dU(t), r = nd / sl.dU; sl.dU = nd;
+  for (let j = 0; j < sl.n; j++) sl.om[j] *= r;
+  sl.setTargets(); sl.solvePsi(60);
+}
+function setDens(t) {
+  const nd = riMap.db(t), r = nd / sl.db; sl.db = nd;
+  for (let j = 0; j < sl.n; j++) sl.b[j] *= r;
+  sl.setTargets();
+}
+sl.dU = riMap.dU(+$('#ri-shear').value); sl.db = riMap.db(+$('#ri-dens').value);
+restartRi();
+$('#ri-shear').addEventListener('input', (e) => setShear(+e.target.value));
+$('#ri-dens').addEventListener('input', (e) => setDens(+e.target.value));
+$('#ri-reset').addEventListener('click', (e) => { restartRi(); if (e.detail > 0) e.currentTarget.blur(); });
+
+// In this small simulation the layers start to roll up near Ri ≈ 0.15; the theoretical limit is 0.25.
+const needleRi = buildGauge($('#ri-gauge'), {
+  aria: 'Escala del número de Richardson', min: 0.005, max: 2, map: Math.log10,
+  zones: [
+    { a: 0.005, b: 0.15, color: css('--hot') },
+    { a: 0.15, b: 0.25, color: css('--warn') },
+    { a: 0.25, b: 2, color: css('--calm') },
+  ],
+  ticks: [{ v: 0.01, label: '0.01' }, { v: 0.1, label: '0.1' }, { v: 0.25, label: '0.25' }, { v: 1, label: '1' }],
+  marks: [{ v: 0.027, label: 'gana la corriente' }, { v: 0.19, label: 'límite' }, { v: 0.7, label: 'ganan las capas' }],
+});
+function setRegimeRi(Ri) {
+  let c, t, s;
+  if (Ri < 0.15) { c = '--hot'; t = 'Gana la corriente'; s = 'La frontera se enrolla en remolinos y el agua dulce se mezcla con la salada.'; }
+  else if (Ri < 0.25) { c = '--warn'; t = 'Al límite'; s = 'Las capas aguantan apenas. Con un poco más de velocidad se enrollan.'; }
+  else { c = '--calm'; t = 'Ganan las capas'; s = 'La diferencia de peso mantiene las dos aguas separadas, cada una en su capa.'; }
+  if (RI.regime === t) return;
+  RI.regime = t;
+  const box = $('#ri-regime');
+  box.querySelector('i').style.background = `var(${c})`; box.querySelector('span').textContent = t; $('#ri-regime-sub').textContent = s;
+}
+function updateRiReadout() {
+  const Ri = sl.richardson();
+  $('#ri-val').textContent = Ri.toFixed(2); needleRi(Ri); setRegimeRi(Ri);
+  // 0 % = two clean layers, 100 % = blended zone as thick as 60 % of the depth
+  const m = clamp((sl.mixing() - 0.15) / 0.45, 0, 1);
+  RI.mix += (m - RI.mix) * 0.12;
+  const pct = Math.round(RI.mix * 100);
+  $('#ri-mix').style.width = pct + '%'; $('#ri-mix-out').textContent = pct + ' %';
+}
+function stepRi(budget) {
+  const n = clamp(Math.round(budget / RI.msStep), 1, 6);
+  const t0 = performance.now();
+  for (let i = 0; i < n; i++) sl.step(RI.dt);
+  const ms = (performance.now() - t0) / n;
+  RI.msStep += (ms - RI.msStep) * 0.1;
+  sl.velocities();
+  const P = particlesRi, tsum = n * RI.dt;
+  for (let i = 0; i < PRI; i++) {
+    let x = P.x[i], z = P.z[i];
+    x += sl.interp(sl.u, x, z) * tsum; z += sl.interp(sl.w, x, z) * tsum;
+    if (x < 0) x += sl.Lx; if (x >= sl.Lx) x -= sl.Lx;
+    P.life[i] -= tsum;
+    if (P.life[i] <= 0 || z <= 0.02 || z >= sl.H - 0.003) { spawnRi(i); continue; }
+    P.x[i] = x; P.z[i] = z;
+  }
+  if (!sl.healthy()) { restartRi(); toast('#toast-ri', 'La simulación se reinició'); }
+}
+function drawRi() {
+  const dpr = fitCanvas(cvRi);
+  const W = cvRi.width, H = cvRi.height, { nx, nz } = RI;
+  const R = letterbox(W, H, 3);
+  const b = sl.b, inv = 1 / sl.db;
+  for (let k = 0; k <= nz; k++) {
+    const row = (nz - k) * nx, r = Math.max(k, 1) * nx;
+    for (let i = 0; i < nx; i++) {
+      let t = b[r + i] * inv + 0.5;
+      t = t < 0 ? 0 : t > 1 ? 1 : t;
+      pixRi[row + i] = LUT_RHO[(t * 255) | 0];
+    }
+  }
+  offRiCtx.putImageData(imgRi, 0, 0);
+  const c = ctxRi;
+  c.fillStyle = css('--deep'); c.fillRect(0, 0, W, H);
+  c.imageSmoothingEnabled = true; c.imageSmoothingQuality = 'high';
+  c.drawImage(offRi, R.x, R.y, R.w, R.h);
+  const X = (x) => R.x + (x / sl.dx + 0.5) / nx * R.w;
+  const Y = (z) => R.y + ((nz - z / sl.dz) + 0.5) / (nz + 1) * R.h;
+  c.fillStyle = 'rgba(233, 242, 244, 0.55)';
+  const sz = Math.max(1.6, 1.4 * dpr), P = particlesRi;
+  for (let i = 0; i < PRI; i++) c.fillRect(X(P.x[i]) - sz / 2, Y(P.z[i]) - sz / 2, sz, sz);
+  // labels and layer arrows (arrow length follows the chosen velocity difference)
+  const fs = Math.round(clamp(R.h * 0.05, 12 * dpr, 22 * dpr));
+  c.font = `700 ${fs}px ${css('--f-body')}`; c.textBaseline = 'middle'; c.textAlign = 'left';
+  const len = R.w * (0.05 + 0.11 * (sl.dU - 0.4) / 0.6), x0 = R.x + 16 * dpr, hd = fs * 0.5;
+  const arrow = (y, dir, col) => {
+    const a = dir > 0 ? x0 : x0 + len, bb = dir > 0 ? x0 + len : x0;
+    c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 3 * dpr; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(a, y); c.lineTo(bb - dir * hd, y); c.stroke();
+    c.beginPath(); c.moveTo(bb, y); c.lineTo(bb - dir * hd * 1.4, y - hd * 0.8); c.lineTo(bb - dir * hd * 1.4, y + hd * 0.8); c.closePath(); c.fill();
+  };
+  const yTop = R.y + R.h * 0.14, yBot = R.y + R.h * 0.86;
+  arrow(yTop, 1, '#0a1822'); arrow(yBot, -1, 'rgba(233, 242, 244, 0.9)');
+  c.fillStyle = '#0a1822'; c.fillText('agua dulce', x0 + len + 12 * dpr, yTop);
+  c.fillStyle = 'rgba(233, 242, 244, 0.9)'; c.fillText('agua salada', x0 + len + 12 * dpr, yBot);
+}
+
+// ==================================================================
+//                     tabs, keys, demo mode, loop
+// ==================================================================
+const TABS = ['re', 'iw', 'ri'];
+let active = 're', paused = false;
+function setTab(t) {
+  active = t;
+  TABS.forEach((id) => {
+    $('#tab-' + id).setAttribute('aria-selected', String(t === id));
+    $('#mod-' + id).hidden = t !== id;
+  });
+}
+TABS.forEach((id) => $('#tab-' + id).addEventListener('click', () => setTab(id)));
+function fullscreen() {
+  try {
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    else document.documentElement.requestFullscreen().catch(() => toast('#toast-' + active, 'Usa F11 para pantalla completa'));
+  } catch (e) { /* not available */ }
+}
+$('#btn-fs').addEventListener('click', fullscreen);
+function nudgeRange(id, d) {
+  const r = $(id); r.value = clamp(+r.value + d, +r.min, +r.max); r.dispatchEvent(new Event('input'));
+}
+function resetActive() {
+  if (active === 're') buildShape();
+  else if (active === 'iw') { iw.build(true); resetParticlesIw(); }
+  else restartRi();
+}
+document.addEventListener('keydown', (e) => {
+  if (e.altKey || e.ctrlKey || e.metaKey) return;
+  const onRange = document.activeElement && document.activeElement.type === 'range';
+  const k = e.key;
+  if (k === '1') setTab('re');
+  else if (k === '2') setTab('iw');
+  else if (k === '3') setTab('ri');
+  else if (k === ' ') { e.preventDefault(); paused = !paused; toast('#toast-' + active, paused ? 'Pausa' : 'Continúa'); }
+  else if (k === 'r' || k === 'R') resetActive();
+  else if (k === 'f' || k === 'F') fullscreen();
+  else if ((k === 'v' || k === 'V') && active === 're') $('#re-views').children[(RE.view + 1) % 2].click();
+  else if ((k === 'h' || k === 'H') && active === 'iw') setMode(!iw.nonhyd);
+  else if (onRange) return;
+  else if (k === 'ArrowRight' || k === 'ArrowLeft') {
+    e.preventDefault();
+    nudgeRange({ re: '#re-speed', iw: '#iw-tidein', ri: '#ri-shear' }[active], k === 'ArrowRight' ? 4 : -4);
+  } else if (k === 'ArrowUp' || k === 'ArrowDown') {
+    e.preventDefault();
+    if (active === 're') { const i = clamp(RE.fluid + (k === 'ArrowUp' ? -1 : 1), 0, RE.fluids.length - 1); $('#re-fluids').children[i].click(); }
+    else nudgeRange(active === 'iw' ? '#iw-fresh' : '#ri-dens', k === 'ArrowUp' ? 8 : -8);
+  }
+});
+
+// demo (attract) mode after inactivity
+const IDLE_MS = 45000;
+let lastInput = performance.now(), demo = false, demoStart = 0, demoPhase = -1;
+function showDemoChip(on) { TABS.forEach((id) => { $('#demo-' + id).hidden = !on || active !== id; }); }
+function wake() {
+  lastInput = performance.now();
+  if (demo) { demo = false; showDemoChip(false); }
+}
+['pointermove', 'pointerdown', 'keydown', 'wheel'].forEach((ev) => window.addEventListener(ev, wake, { passive: true }));
+function setRange(id, v) { const r = $(id); r.value = v; r.dispatchEvent(new Event('input')); }
+function runDemo(now) {
+  if (!demo && now - lastInput > IDLE_MS) { demo = true; demoStart = now; demoPhase = -1; paused = false; }
+  if (!demo) return;
+  const t = ((now - demoStart) / 1000) % 120;
+  const phase = Math.floor(t / 12); // 0..9
+  if (phase === demoPhase) return;
+  demoPhase = phase;
+  if (phase < 4) {
+    if (active !== 're') setTab('re');
+    if (phase === 0) { RE.shape = 0; setShapeUI(0); RE.view = 0; setViewUI(0); buildShape(); }
+    RE.fluid = [0, 1, 2, 2][phase]; setFluidUI(RE.fluid);
+    setRange('#re-speed', [80, 100, 45, 100][phase]);
+  } else if (phase < 7) {
+    if (active !== 'iw') setTab('iw');
+    if (phase === 4) { setRange('#iw-tidein', 70); iw.build(true); resetParticlesIw(); setMode(true); }
+    if (phase === 6) setMode(false);
+  } else {
+    if (active !== 'ri') setTab('ri');
+    if (phase === 7) { setRange('#ri-shear', 80); setRange('#ri-dens', 5); restartRi(); }
+    if (phase === 9) setRange('#ri-dens', 75);
+  }
+  showDemoChip(true);
+}
+
+buildShape();
+let frameNo = 0;
+function frame(now) {
+  requestAnimationFrame(frame);
+  runDemo(now);
+  frameNo++;
+  if (active === 're') {
+    if (!paused) stepRe(9);
+    drawRe();
+    if (frameNo % 6 === 0) updateRegimeRe();
+  } else if (active === 'iw') {
+    if (!paused) stepIw(9);
+    drawIw();
+    if (frameNo % 3 === 0) {
+      const F = iw.froude(); IW.G += (F.G - IW.G) * 0.25;
+      $('#fr-val').textContent = IW.G.toFixed(2); needleFr(IW.G); setRegimeFr(IW.G);
+      updateTideTag();
+    }
+  } else {
+    if (!paused) stepRi(9);
+    drawRi();
+    if (frameNo % 3 === 0) updateRiReadout();
+  }
+}
+requestAnimationFrame(frame);
+})();
+
+</script>
