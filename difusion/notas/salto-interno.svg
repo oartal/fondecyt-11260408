@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 540" role="img" aria-labelledby="t d" font-family="'Source Sans 3','Segoe UI',Arial,sans-serif">
+  <title id="t">Cómo se forma un salto hidráulico interno</title>
+  <desc id="d">La marea empuja dos capas de agua sobre un umbral submarino. El agua densa se acelera, se hunde detrás del umbral y luego salta bruscamente hacia arriba, formando remolinos, mezcla y ondas internas.</desc>
+  <defs>
+    <marker id="fl" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#ffffff"/></marker>
+    <marker id="fo" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#0b2a3c"/></marker>
+  </defs>
+  <!-- cielo y agua liviana -->
+  <rect width="1000" height="540" fill="#eaf6f8"/>
+  <rect y="60" width="1000" height="480" fill="#9fd8df"/>
+  <!-- agua densa -->
+  <path fill="#1f6f8b" d="M0,200 C150,200 300,200 400,208 C450,212 480,240 520,300 C545,338 570,366 600,372 C625,376 640,300 665,255 C685,222 715,200 750,215 C780,228 800,236 830,222 C855,210 880,206 910,214 C940,222 970,216 1000,214 L1000,540 L0,540 Z"/>
+  <!-- zona de mezcla -->
+  <path fill="#5fb3c4" opacity=".9" d="M604,372 C628,372 640,300 665,255 C685,222 715,200 750,215 C790,232 800,262 790,300 C778,345 740,388 690,402 C655,410 622,400 604,372 Z"/>
+  <!-- fondo con umbral -->
+  <path fill="#2b2620" d="M0,540 L0,470 C150,468 300,440 370,340 C395,305 415,298 435,300 C470,304 520,345 600,415 C660,455 760,470 1000,470 L1000,540 Z"/>
+  <!-- superficie -->
+  <path d="M0,60 Q25,54 50,60 T100,60 T150,60 T200,60 T250,60 T300,60 T350,60 T400,60 T450,60 T500,60 T550,60 T600,60 T650,60 T700,60 T750,60 T800,60 T850,60 T900,60 T950,60 T1000,60" fill="none" stroke="#ffffff" stroke-width="4"/>
+  <!-- marea -->
+  <line x1="40" y1="112" x2="190" y2="112" stroke="#0b2a3c" stroke-width="8" stroke-linecap="round" marker-end="url(#fo)"/>
+  <text x="212" y="121" font-size="27" font-weight="700" fill="#0b2a3c">marea</text>
+  <!-- flechas de flujo en la capa densa -->
+  <g stroke="#ffffff" stroke-width="5" stroke-linecap="round" fill="none">
+    <line x1="60" y1="330" x2="120" y2="330" marker-end="url(#fl)"/>
+    <line x1="200" y1="300" x2="270" y2="296" marker-end="url(#fl)"/>
+    <path d="M405,250 C455,248 500,300 583,386" marker-end="url(#fl)" stroke-width="6"/>
+    <line x1="850" y1="350" x2="905" y2="350" marker-end="url(#fl)"/>
+  </g>
+  <!-- remolinos -->
+  <g fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round">
+    <path d="M650,345 a16,16 0 1,1 19,16 a8,8 0 1,1 -7,-11"/>
+    <path d="M700,290 a19,19 0 1,1 22,19 a9,9 0 1,1 -8,-13"/>
+    <path d="M722,362 a13,13 0 1,1 15,13 a6,6 0 1,1 -5,-9"/>
+    <path d="M662,268 a11,11 0 1,1 13,11 a5,5 0 1,1 -4,-7"/>
+  </g>
+  <!-- rótulos -->
+  <g font-size="25" font-weight="600">
+    <text x="40" y="170" fill="#0b2a3c">agua liviana (más dulce)</text>
+    <text x="40" y="400" fill="#ffffff">agua densa (más salada)</text>
+    <text x="385" y="400" fill="#ffffff">umbral</text>
+  </g>
+  <!-- números -->
+  <g font-size="28" font-weight="700" text-anchor="middle">
+    <g><circle cx="300" cy="200" r="24" fill="#e07a3f" stroke="#fff" stroke-width="3"/><text x="300" y="210" fill="#fff">1</text></g>
+    <g><circle cx="432" cy="170" r="24" fill="#e07a3f" stroke="#fff" stroke-width="3"/><text x="432" y="180" fill="#fff">2</text></g>
+    <g><circle cx="575" cy="300" r="24" fill="#e07a3f" stroke="#fff" stroke-width="3"/><text x="575" y="310" fill="#fff">3</text></g>
+    <g><circle cx="790" cy="170" r="24" fill="#e07a3f" stroke="#fff" stroke-width="3"/><text x="790" y="180" fill="#fff">4</text></g>
+    <g><circle cx="915" cy="170" r="24" fill="#e07a3f" stroke="#fff" stroke-width="3"/><text x="915" y="180" fill="#fff">5</text></g>
+  </g>
+  <line x1="775" y1="188" x2="735" y2="240" stroke="#0b2a3c" stroke-width="3"/>
+  <line x1="915" y1="194" x2="915" y2="208" stroke="#0b2a3c" stroke-width="3"/>
+  <text x="985" y="525" font-size="15" text-anchor="end" fill="#b9b2a6">Fondecyt de Iniciación 11260408 · ANID</text>
+</svg>

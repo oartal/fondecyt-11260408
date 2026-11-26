@@ -208,3 +208,21 @@ footer .logos img { height: 56px; }
 .archivo-texto small { color: var(--suave); }
 .archivo-bajar { font-weight: 600; color: var(--mar); font-size: .92rem; white-space: nowrap; }
 .archivo:hover .archivo-bajar { color: var(--acento); }
+
+.figura { margin: 1.6rem 0; }
+.figura img { display: block; width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--borde); }
+.figura figcaption { font-size: .9rem; color: var(--suave); margin-top: .5rem; }
+.pasos { list-style: none; counter-reset: paso; padding: 0; margin: 0; display: grid; gap: .7rem; max-width: 68ch; }
+.pasos li { counter-increment: paso; position: relative; padding-left: 3rem; min-height: 2.2rem; }
+.pasos li::before {
+  content: counter(paso); position: absolute; left: 0; top: 0; width: 2.1rem; height: 2.1rem;
+  border-radius: 50%; background: var(--acento); color: #fff; font-weight: 700; display: grid; place-items: center;
+}
+.notas { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); margin-top: 1.2rem; }
+.nota { display: block; text-decoration: none; color: inherit; background: #fff; border: 1px solid var(--borde); border-radius: 12px; overflow: hidden; }
+.nota:hover { border-color: var(--salobre); }
+.nota img { display: block; width: 100%; height: auto; }
+.nota-texto { display: flex; flex-direction: column; gap: .2rem; padding: .9rem 1.1rem 1.1rem; }
+.nota-texto small { color: var(--acento); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.nota-texto strong { font-family: "Fraunces", Georgia, serif; font-size: 1.15rem; color: var(--mar-profundo); }
+.nota-texto span { color: #36454f; font-size: .96rem; }
