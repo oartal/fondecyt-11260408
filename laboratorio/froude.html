@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Módulo 4 · ¿Quién gana, la ola o la corriente? · Laboratorio de Remolinos y Ondas</title>
+<style>
+  :root { --profundo:#0b2a3c; --mar:#134e6f; --salobre:#1f8a9e; --dulce:#9fd8df; --arena:#f4efe6; --tinta:#1b2730; --suave:#5b6b75; --acento:#e07a3f; --borde:#d9d2c5; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:"Source Sans 3","Segoe UI",system-ui,sans-serif; background:var(--arena); color:var(--tinta); line-height:1.5; }
+  header { background:var(--profundo); color:#fff; padding:.9rem 1.2rem; display:flex; gap:1rem; align-items:baseline; flex-wrap:wrap; }
+  header a { color:var(--dulce); text-decoration:none; font-size:.95rem; }
+  header .mod { font-size:.8rem; letter-spacing:.1em; text-transform:uppercase; color:var(--dulce); }
+  h1 { font-family:Georgia,"Times New Roman",serif; font-size:clamp(1.4rem,3.6vw,2.1rem); margin:0; flex-basis:100%; }
+  main { max-width:1100px; margin:0 auto; padding:1rem 1.2rem 2rem; }
+  .pregunta { font-size:1.15rem; margin:.4rem 0 .8rem; max-width:60ch; }
+  .escena { position:relative; border-radius:14px; overflow:hidden; border:1px solid var(--borde); background:#9fd8df; cursor:crosshair; }
+  canvas { display:block; width:100%; height:auto; touch-action:manipulation; }
+  .estado { position:absolute; left:12px; top:12px; background:rgba(11,42,60,.85); color:#fff; padding:.45rem .9rem; border-radius:99px; font-weight:700; font-size:clamp(.85rem,2vw,1.05rem); pointer-events:none; }
+  .estado.rapido { background:var(--acento); }
+  .panel { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:.9rem; margin-top:.9rem; }
+  .caja { background:#fff; border:1px solid var(--borde); border-radius:12px; padding:.9rem 1rem; }
+  .caja label { display:flex; justify-content:space-between; font-weight:700; margin-bottom:.3rem; }
+  .caja label span { font-weight:400; color:var(--suave); }
+  input[type=range] { width:100%; accent-color:var(--acento); height:28px; }
+  button { font:inherit; font-weight:700; border:0; border-radius:10px; background:var(--mar); color:#fff; padding:.75rem 1.1rem; cursor:pointer; width:100%; }
+  button:hover { background:var(--profundo); }
+  .medidor { height:16px; border-radius:99px; background:linear-gradient(90deg,#9fd8df 0%,#1f8a9e 45%,#e07a3f 55%,#b8501c 100%); position:relative; margin:.9rem 0 .3rem; }
+  .medidor i { position:absolute; top:-6px; width:6px; height:28px; border-radius:3px; background:var(--profundo); transform:translateX(-50%); transition:left .15s; }
+  .medidor b { position:absolute; left:50%; top:-4px; height:24px; border-left:2px dashed #fff; }
+  .escala { display:flex; justify-content:space-between; font-size:.85rem; color:var(--suave); }
+  .retos { margin:.9rem 0 0; padding:0; list-style:none; display:grid; gap:.5rem; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); }
+  .retos li { background:#fff; border-left:4px solid var(--salobre); border-radius:0 10px 10px 0; padding:.6rem .9rem; }
+  .idea { margin-top:1rem; background:var(--profundo); color:#fff; border-radius:12px; padding:.9rem 1.1rem; }
+  .idea strong { color:var(--dulce); }
+  .teclas { font-size:.85rem; color:var(--suave); margin-top:.6rem; }
+  footer { font-size:.8rem; color:var(--suave); text-align:center; padding:0 1rem 1.5rem; }
+</style>
+</head>
+<body>
+<header>
+  <span class="mod">Módulo 4 · Número de Froude</span>
+  <a href="./">← Volver al Laboratorio</a>
+  <h1>¿Quién gana, la ola o la corriente?</h1>
+</header>
+<main>
+  <p class="pregunta">Tira piedras al agua haciendo <strong>clic</strong> y mira hacia dónde viajan las olas. Después sube la marea.</p>
+
+  <div class="escena" id="escena">
+    <canvas id="c" width="1100" height="520" aria-label="Simulación: dos capas de agua pasan sobre un cerro submarino. Al hacer clic se crean olas."></canvas>
+    <div class="estado" id="estado">Agua tranquila</div>
+  </div>
+
+  <div class="panel">
+    <div class="caja">
+      <label for="marea">Fuerza de la marea <span id="mareaTxt">suave</span></label>
+      <input type="range" id="marea" min="5" max="55" value="14">
+      <label for="cerro" style="margin-top:.6rem">Altura del cerro <span id="cerroTxt">mediano</span></label>
+      <input type="range" id="cerro" min="10" max="45" value="30">
+    </div>
+    <div class="caja">
+      <strong>¿Quién va ganando?</strong>
+      <div class="medidor"><b></b><i id="aguja" style="left:20%"></i></div>
+      <div class="escala"><span>gana la ola</span><span>empate</span><span>gana la corriente</span></div>
+    </div>
+    <div class="caja">
+      <button id="piedra">Tirar una piedra</button>
+      <p class="teclas">Teclado: ← → marea · ↑ ↓ cerro · espacio: piedra</p>
+    </div>
+  </div>
+
+  <ul class="retos">
+    <li><strong>Reto 1.</strong> Con marea suave, tira una piedra. ¿La ola viaja hacia los dos lados?</li>
+    <li><strong>Reto 2.</strong> Sube la marea hasta que aparezca la zona naranja. ¿Qué pasa detrás del cerro?</li>
+    <li><strong>Reto 3.</strong> Tira una piedra en la zona naranja. ¿Alguna ola logra volver?</li>
+  </ul>
+
+  <div class="idea"><strong>La idea:</strong> cuando la corriente es más lenta que las olas, las olas pueden ir contra ella. Cuando es más rápida, se las lleva. Donde el agua rápida se encuentra con la lenta aparece un <strong>salto</strong>, con remolinos que mezclan el agua. Los científicos comparan ambas velocidades con el <strong>número de Froude</strong>.</div>
+</main>
+<footer>Laboratorio de Remolinos y Ondas · Proyecto Fondecyt de Iniciación N° 11260408, financiado por ANID.</footer>
+
+<script>
+(function () {
+  "use strict";
+  var cv = document.getElementById("c"), g = cv.getContext("2d");
+  var elMarea = document.getElementById("marea"), elCerro = document.getElementById("cerro");
+  var elEstado = document.getElementById("estado"), elAguja = document.getElementById("aguja");
+  var LX = 10, XC = 4, WB = 0.9, YTOP = 2.05, YSUP = 1.9, N = 240;
+  var q = 0.14, bm = 0.30, xj = null, controlado = false;
+  var xs = [], bb = [], hh = [], fr = [], pulsos = [], piedras = [], parts = [], ultimoX = 2.2, t0 = 0;
+
+  function bump(x) { var d = (x - XC) / WB; return bm * Math.exp(-d * d); }
+  function f(h, E) { return h + q * q / (2 * h * h) - E; }
+  function raizSub(E) { var hc = Math.pow(q, 2 / 3); if (E < 1.5 * hc) return NaN; var a = hc, b = E + 0.01; for (var i = 0; i < 40; i++) { var m = (a + b) / 2; if (f(m, E) > 0) b = m; else a = m; } return (a + b) / 2; }
+  function raizSup(E) { var hc = Math.pow(q, 2 / 3); if (E < 1.5 * hc) return hc; var a = 1e-4, b = hc; for (var i = 0; i < 40; i++) { var m = (a + b) / 2; if (f(m, E) > 0) a = m; else b = m; } return (a + b) / 2; }
+  function conj(h) { return h / 2 * (Math.sqrt(1 + 8 * q * q / (h * h * h)) - 1); }
+
+  function calcula() {
+    var Ed = 1 + q * q / 2, Emin = 1.5 * Math.pow(q, 2 / 3), i, x;
+    controlado = Ed < Emin + bm; xj = null;
+    var Eu = Emin + bm, sup = [], sub = [];
+    for (i = 0; i <= N; i++) { x = LX * i / N; xs[i] = x; bb[i] = bump(x); }
+    if (!controlado) { for (i = 0; i <= N; i++) hh[i] = raizSub(Ed - bb[i]); }
+    else {
+      for (i = 0; i <= N; i++) { sup[i] = raizSup(Eu - bb[i]); sub[i] = raizSub(Ed - bb[i]); }
+      var fin = XC + 2.6 * WB;
+      for (i = 0; i <= N; i++) { if (xs[i] > XC + 0.05 && xs[i] < fin && !isNaN(sub[i]) && conj(sup[i]) <= sub[i]) { xj = xs[i]; break; } }
+      if (xj === null) { var s = raizSup(Eu); xj = Math.min(9.2, fin + 2.2 * Math.max(0, conj(s) - 1)); }
+      for (i = 0; i <= N; i++) {
+        x = xs[i];
+        if (x <= XC) hh[i] = raizSub(Eu - bb[i]);
+        else { var w = 0.5 * (1 + Math.tanh((x - xj) / 0.12)); var hd = isNaN(sub[i]) ? 1 - bb[i] : sub[i]; hh[i] = sup[i] * (1 - w) + hd * w; }
+      }
+    }
+    for (i = 0; i <= N; i++) fr[i] = q / Math.pow(hh[i], 1.5);
+    var fmax = 0; for (i = 0; i <= N; i++) if (xs[i] < (xj === null ? LX : xj - 0.2) && fr[i] > fmax) fmax = fr[i];
+    var pos = fmax <= 1 ? 50 * fmax : Math.min(97, 50 + 22 * (fmax - 1));
+    elAguja.style.left = Math.max(3, pos) + "%";
+    elEstado.textContent = controlado ? "¡Agua rápida y salto!" : "Agua tranquila";
+    elEstado.className = "estado" + (controlado ? " rapido" : "");
+    document.getElementById("mareaTxt").textContent = q < 0.2 ? "suave" : (q < 0.38 ? "media" : "fuerte");
+    document.getElementById("cerroTxt").textContent = bm < 0.2 ? "bajo" : (bm < 0.35 ? "mediano" : "alto");
+  }
+  function interp(arr, x) { var u = Math.max(0, Math.min(N - 1e-6, x / LX * N)), i = Math.floor(u), a = u - i; return arr[i] * (1 - a) + arr[i + 1] * a; }
+  function eta(x) { // interfaz con olas
+    var y = interp(bb, x) + interp(hh, x);
+    for (var k = 0; k < pulsos.length; k++) { var p = pulsos[k], d = (x - p.x) / 0.16; if (d > -4 && d < 4) y += p.amp * Math.exp(-d * d); }
+    return y;
+  }
+  function PX(x) { return x / LX * cv.width; }
+  function PY(y) { return cv.height * (1 - y / YTOP); }
+
+  function tiraPiedra(x) { x = Math.max(0.3, Math.min(LX - 0.3, x)); ultimoX = x; piedras.push({ x: x, y: YSUP, v: 0 }); }
+  function creaOlas(x) { pulsos.push({ x: x, dir: 1, amp: 0.085, edad: 0 }); pulsos.push({ x: x, dir: -1, amp: 0.085, edad: 0 }); }
+
+  for (var k = 0; k < 110; k++) parts.push({ x: Math.random() * LX, s: 0.12 + 0.76 * Math.random() });
+
+  function paso(dt) {
+    var i, p;
+    for (i = piedras.length - 1; i >= 0; i--) { p = piedras[i]; p.v += 9 * dt; p.y -= p.v * dt; if (p.y <= eta(p.x)) { creaOlas(p.x); piedras.splice(i, 1); } }
+    for (i = pulsos.length - 1; i >= 0; i--) {
+      p = pulsos[i]; var h = interp(hh, p.x), u = q / h, c = Math.sqrt(h), x0 = p.x;
+      p.x += (u + p.dir * c) * dt * 0.9; p.edad += dt; p.amp *= Math.exp(-dt * 0.22);
+      if (xj !== null) {
+        if (x0 > xj && p.x <= xj + 0.1) { p.x = xj + 0.1; p.amp *= Math.exp(-dt * 2.5); }   // no puede cruzar el salto
+        if (x0 < xj && p.x >= xj - 0.05) p.amp = 0;                                        // el salto se la traga
+      }
+      if (p.x < -0.5 || p.x > LX + 0.5 || p.amp < 0.004) pulsos.splice(i, 1);
+    }
+    for (i = 0; i < parts.length; i++) { p = parts[i]; p.x += q / interp(hh, p.x) * dt * 0.9; if (p.x > LX) { p.x -= LX; p.s = 0.12 + 0.76 * Math.random(); } }
+  }
+
+  function dibuja(t) {
+    var W = cv.width, H = cv.height, i, x;
+    g.fillStyle = "#eaf6f8"; g.fillRect(0, 0, W, H);
+    g.fillStyle = "#9fd8df"; g.fillRect(0, PY(YSUP), W, H);
+    // capa densa
+    g.beginPath(); g.moveTo(0, H);
+    for (i = 0; i <= N; i++) { x = xs[i]; g.lineTo(PX(x), PY(eta(x))); }
+    g.lineTo(W, H); g.closePath(); g.fillStyle = "#1f6f8b"; g.fill();
+    // mezcla en el salto
+    if (xj !== null) {
+      var yj = interp(bb, xj + 0.3) + 0.55 * interp(hh, xj + 0.3);
+      g.fillStyle = "rgba(95,179,196,.85)"; g.beginPath(); g.ellipse(PX(xj + 0.35), PY(yj), W * 0.045, H * 0.13, 0, 0, 6.3); g.fill();
+      g.strokeStyle = "#fff"; g.lineWidth = 3; g.lineCap = "round";
+      for (var e = 0; e < 3; e++) {
+        var ex = PX(xj + 0.2 + 0.18 * e), ey = PY(yj + (e === 1 ? 0.16 : -0.08)), r = H * (0.028 - 0.004 * e), a0 = -t * (2.2 + e * 0.5);
+        g.beginPath(); for (var s = 0; s <= 30; s++) { var a = a0 + s * 0.2, rr = r * (1 - s / 42); if (s === 0) g.moveTo(ex + rr * Math.cos(a), ey + rr * Math.sin(a)); else g.lineTo(ex + rr * Math.cos(a), ey + rr * Math.sin(a)); } g.stroke();
+      }
+    }
+    // partículas (muestran la velocidad)
+    g.fillStyle = "rgba(255,255,255,.75)";
+    for (i = 0; i < parts.length; i++) { var p = parts[i], b0 = interp(bb, p.x), h0 = interp(hh, p.x), len = Math.min(26, 4 + 16 * q / h0); g.fillRect(PX(p.x), PY(b0 + p.s * h0), len, 2.5); }
+    // interfaz: zona rápida en naranja
+    g.lineWidth = 5; g.lineJoin = "round";
+    for (i = 0; i < N; i++) { var rap = fr[i] > 1.02 && xj !== null && xs[i] < xj; g.strokeStyle = rap ? "#e07a3f" : "rgba(255,255,255,.9)"; g.beginPath(); g.moveTo(PX(xs[i]), PY(eta(xs[i]))); g.lineTo(PX(xs[i + 1]), PY(eta(xs[i + 1]))); g.stroke(); }
+    // fondo y cerro
+    g.beginPath(); g.moveTo(0, H); for (i = 0; i <= N; i++) g.lineTo(PX(xs[i]), PY(bb[i] + 0.06)); g.lineTo(W, H); g.closePath(); g.fillStyle = "#2b2620"; g.fill();
+    // superficie
+    g.strokeStyle = "#fff"; g.lineWidth = 4; g.beginPath();
+    for (i = 0; i <= 100; i++) { var sx = W * i / 100, sy = PY(YSUP) + 3 * Math.sin(i * 0.9 + t * 1.5); if (i === 0) g.moveTo(sx, sy); else g.lineTo(sx, sy); } g.stroke();
+    // piedras
+    g.fillStyle = "#4a4239"; for (i = 0; i < piedras.length; i++) { g.beginPath(); g.arc(PX(piedras[i].x), PY(piedras[i].y), 9, 0, 6.3); g.fill(); }
+    // rótulos
+    var fs = Math.max(13 * DPR, W * 0.02); g.font = "600 " + fs + "px 'Source Sans 3','Segoe UI',sans-serif";
+    g.fillStyle = "#0b2a3c"; g.fillText("agua liviana", W * 0.72, PY(YSUP) + fs * 1.6);
+    g.fillStyle = "#fff"; g.fillText("agua densa", W * 0.03, H - fs * 0.9); g.fillText("cerro", PX(XC) - fs * 1.2, H - fs * 0.6);
+    var la = 30 + 260 * q; g.strokeStyle = "#0b2a3c"; g.fillStyle = "#0b2a3c"; g.lineWidth = 6; var ay = PY(YSUP) + fs * 4.4, ax = W * 0.03;
+    g.beginPath(); g.moveTo(ax, ay); g.lineTo(ax + la, ay); g.stroke(); g.beginPath(); g.moveTo(ax + la + 16, ay); g.lineTo(ax + la, ay - 10); g.lineTo(ax + la, ay + 10); g.closePath(); g.fill();
+    g.fillText("marea", ax, ay - 14);
+    if (xj !== null) { g.fillStyle = "#fff"; g.font = "700 " + fs + "px 'Source Sans 3','Segoe UI',sans-serif"; g.fillText("salto", PX(xj) + W * 0.02, PY(interp(bb, xj) + interp(hh, xj + 0.6)) - 16); }
+  }
+
+  var DPR = 1;
+  function ajusta() { var w = cv.clientWidth || 1100; DPR = Math.min(2, window.devicePixelRatio || 1); cv.width = Math.round(w * DPR); cv.height = Math.round(w * DPR * (w < 600 ? 0.72 : 0.47)); }
+  window.addEventListener("resize", ajusta);
+  function cuadro(ms) { var t = ms / 1000, dt = Math.min(0.05, t - t0 || 0.016); t0 = t; paso(dt); dibuja(t); requestAnimationFrame(cuadro); }
+  function lee() { q = elMarea.value / 100; bm = elCerro.value / 100; calcula(); }
+
+  elMarea.addEventListener("input", lee); elCerro.addEventListener("input", lee);
+  cv.addEventListener("pointerdown", function (ev) { var r = cv.getBoundingClientRect(); tiraPiedra((ev.clientX - r.left) / r.width * LX); });
+  document.getElementById("piedra").addEventListener("click", function () { tiraPiedra(ultimoX); });
+  document.addEventListener("keydown", function (ev) {
+    if (ev.target === elMarea || ev.target === elCerro) return;
+    var k = ev.key, hecho = true;
+    if (k === "ArrowRight") elMarea.value = +elMarea.value + 2; else if (k === "ArrowLeft") elMarea.value = +elMarea.value - 2;
+    else if (k === "ArrowUp") elCerro.value = +elCerro.value + 2; else if (k === "ArrowDown") elCerro.value = +elCerro.value - 2;
+    else if (k === " ") { if (ev.target.tagName !== "BUTTON") tiraPiedra(ultimoX); else hecho = false; } else hecho = false;
+    if (hecho) { ev.preventDefault(); lee(); }
+  });
+  window.__lab = { tira: tiraPiedra, estado: function () { return { q: q, bm: bm, xj: xj, controlado: controlado, pulsos: pulsos.map(function (p) { return [+p.x.toFixed(2), p.dir, +p.amp.toFixed(3)]; }), nan: hh.some(isNaN) }; } };
+  ajusta(); lee(); requestAnimationFrame(cuadro);
+})();
+</script>
+</body>
+</html>
